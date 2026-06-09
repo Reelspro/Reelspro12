@@ -1,0 +1,644 @@
+# ReelsPro Ultimate v12 — FINAL MASTER BUILD PROMPT
+
+You are a senior SaaS architect, AI automation engineer, cinematic video pipeline engineer, analytics engineer, and scalable backend developer.
+
+Build a COMPLETE production-ready SaaS platform called:
+
+# ReelsPro
+
+A centralized AI-powered suspense reel generation + viral traffic analytics platform.
+
+The system converts website articles into cinematic suspense reels using FREE AI providers, FREE rendering tools, dynamic UTM short links, smart music selection, and manual social posting workflows.
+
+---
+
+# CORE PLATFORM PURPOSE
+
+The platform must:
+
+- scrape stories from admin websites
+- distribute random articles to sub users
+- generate cinematic suspense reels
+- create unique UTM short links EVERY TIME
+- track outbound clicks globally
+- allow manual social uploads
+- provide full admin analytics
+- scale to thousands of users
+
+The platform must feel:
+- cinematic
+- viral
+- modern
+- scalable
+- lightweight
+- production ready
+
+---
+
+# IMPORTANT PLATFORM STRATEGY
+
+DO NOT build expensive AI-generated videos.
+
+Instead build:
+- cinematic motion reels
+- animated subtitle reels
+- suspense reels
+- image-motion cinematic videos
+- music-driven reels
+
+using:
+- article images
+- transitions
+- zoom effects
+- overlays
+- animated captions
+- cinematic background music
+- FFmpeg rendering
+
+---
+
+# GLOBAL PLATFORM FLOW
+
+1. Admin adds website/category URLs
+2. System scrapes article pool
+3. Sub users signup
+4. Admin approves/rejects users
+5. User clicks Generate Reel
+6. System selects RANDOM unused article
+7. AI converts article into suspense scenes
+8. Music engine selects matching soundtrack
+9. Remotion builds cinematic scenes
+10. FFmpeg renders MP4
+11. Dynamic UTM short link generated
+12. User gets:
+   - Download Reel
+   - Copy Caption
+   - Copy Comment Link
+13. User uploads reel manually anywhere
+14. User pastes generated short link in comments
+15. Clicks tracked globally
+16. Admin analytics updated realtime
+
+---
+
+# TECH STACK
+
+## Backend
+- Node.js
+- Express.js
+- SQLite using better-sqlite3
+- Redis
+- BullMQ
+- JWT
+- bcryptjs
+- Socket.IO
+- node-cron
+- fluent-ffmpeg
+- ffmpeg-static
+- cheerio
+- rss-parser
+- sharp
+
+## Frontend
+- React 18
+- Vite
+- Tailwind CSS
+- Zustand
+- Axios
+- React Router v6
+- Lucide React
+- Recharts
+- react-hot-toast
+- Remotion
+
+---
+
+# ADMIN WEBSITE SOURCE SYSTEM
+
+IMPORTANT:
+Only ADMIN can add website/category links.
+
+Sub users CANNOT add websites manually.
+
+All approved users automatically receive admin-added website sources.
+
+---
+
+# CATEGORY-BASED STORY SYSTEM
+
+Admin can add:
+- website main URLs
+OR
+- category URLs
+
+Examples:
+- website.com/crime
+- website.com/horror
+- website.com/mystery
+- website.com/emotional
+
+System must:
+- fetch articles from categories
+- randomly rotate articles
+- avoid duplicate assignments
+- maintain article cooldown
+
+---
+
+# ADVANCED RANDOM ARTICLE DISTRIBUTION ENGINE
+
+If:
+3000 users generate reels simultaneously,
+
+System must:
+- assign DIFFERENT random articles
+- avoid duplicates
+- avoid repetitive content
+- rotate categories intelligently
+
+Use Redis locking system.
+
+---
+
+# ARTICLE COOLDOWN RULES
+
+After article used:
+- activate cooldown
+- configurable cooldown timer
+- avoid repetitive reel creation
+
+---
+
+# ARTICLE SCRAPING SYSTEM
+
+Use:
+- Cheerio
+- rss-parser
+
+Extract:
+- title
+- article image
+- content
+- article URL
+- metadata
+- OpenGraph image
+- categories
+
+Store everything in centralized article pool.
+
+---
+
+# ARTICLE POOL SYSTEM
+
+Store:
+- article title
+- article image
+- article URL
+- source category
+- website source
+- usage count
+- cooldown state
+- virality score
+
+---
+
+# FREE AI PROVIDER SYSTEM
+
+Use FREE AI providers only.
+
+## AI Priority Order
+
+### 1. Groq
+Models:
+- llama-3-70b
+- mixtral-8x7b
+- deepseek-r1
+
+Used for:
+- suspense hooks
+- subtitle scenes
+- captions
+- CTA
+- hashtags
+
+### 2. Google Gemini
+Models:
+- gemini-1.5-flash
+- gemini-2.0-flash
+
+### 3. OpenRouter
+
+### 4. HuggingFace Inference API
+
+---
+
+# AI FALLBACK RULES
+
+1. Use user API key
+2. Else admin API key
+3. Else system provider pool
+4. If quota exceeded → rotate provider
+5. If all fail → local suspense templates
+6. NEVER crash application
+
+---
+
+# IMPORTANT AI RULE
+
+DO NOT generate full stories.
+
+Stories already exist on source websites.
+
+AI only converts:
+article → suspense reel scenes
+
+---
+
+# REEL VIDEO ENGINE
+
+Use:
+- Remotion
+
+---
+
+# VIDEO RENDER ENGINE
+
+Use:
+- FFmpeg
+
+---
+
+# REEL RULES
+
+Every reel:
+- vertical 9:16
+- maximum 10 seconds
+- cinematic suspense style
+- animated captions
+- subtitle timing
+- zoom effects
+- blur transitions
+- overlays
+- cinematic pacing
+
+Final scene ALWAYS:
+
+📖 Full Read Story Details In Comments 👇
+
+---
+
+# CINEMATIC EFFECTS
+
+Add:
+- Ken Burns effect
+- blur transitions
+- glow overlays
+- cinematic zoom
+- camera motion
+- vignette
+- grain overlays
+- subtitle animations
+
+---
+
+# REEL CUSTOMIZATION STUDIO
+
+Allow users to customize:
+- background colors
+- subtitle colors
+- overlay opacity
+- glow intensity
+- motion speed
+- zoom level
+- cinematic themes
+
+Provide:
+- Horror Theme
+- Mystery Theme
+- Crime Theme
+- Emotional Theme
+- TikTok Viral Theme
+- Dark Cinematic Theme
+
+---
+
+# BACKGROUND MUSIC ENGINE
+
+Use ONLY local FREE music.
+
+NO paid APIs.
+
+---
+
+# FREE MUSIC SOURCES
+
+Use downloaded assets from:
+- Pixabay Music
+- Mixkit
+- YouTube Audio Library
+- FreeSound
+
+---
+
+# LOCAL MUSIC FOLDERS
+
+/assets/music/
+- horror/
+- mystery/
+- emotional/
+- crime/
+- shocking/
+- suspense/
+- funny/
+- motivational/
+
+---
+
+# SMART MUSIC MATCHING ENGINE
+
+Automatically:
+- detect story emotion
+- choose matching soundtrack
+- trim music duration
+- apply fade in/out
+- reduce music during captions
+
+---
+
+# DYNAMIC UTM SHORTENER SYSTEM
+
+IMPORTANT:
+
+EVERY reel generation MUST create:
+- NEW short URL
+- NEW UTM code
+- NEW redirect path
+- NEW campaign token
+
+EVEN if same article used again.
+
+Example:
+- domain.com/r/xA92Lp
+- domain.com/r/Po82Qa
+- domain.com/r/Lm73Xz
+
+NEVER reuse repetitive links.
+
+---
+
+# CLICK TRACKING SYSTEM
+
+Track:
+- user ID
+- reel ID
+- campaign ID
+- source category
+- platform
+- country
+- city
+- browser
+- OS
+- device
+- timestamp
+- IP address
+- referrer
+
+Detect:
+- Facebook
+- Instagram
+- TikTok
+- YouTube
+- Pinterest
+- Telegram
+- WhatsApp
+- Twitter/X
+- Snapchat
+- Direct traffic
+
+---
+
+# MANUAL SOCIAL POSTING WORKFLOW
+
+Users:
+1. Generate reel
+2. Download reel
+3. Copy caption
+4. Copy short UTM link
+5. Upload manually anywhere
+
+Supported:
+- Facebook
+- Instagram
+- TikTok
+- YouTube Shorts
+- Telegram
+- WhatsApp
+- Pinterest
+- Snapchat
+- Twitter/X
+
+---
+
+# EXPORT OPTIONS
+
+After reel generated show:
+
+1. Download Reel
+2. Copy Caption
+3. Copy Comment Link
+
+Comment link must contain:
+dynamic UTM short URL.
+
+---
+
+# SUB USER SYSTEM
+
+Signup flow:
+1. User registers
+2. Status = pending approval
+3. Admin approves/rejects/suspends
+4. Approved users access dashboard
+
+---
+
+# ADMIN PANEL SYSTEM
+
+Main admin sees EVERYTHING globally.
+
+---
+
+# ADMIN GLOBAL ANALYTICS
+
+Show:
+- total users
+- total active users
+- total reels
+- total downloads
+- total clicks
+- total campaigns
+- top users
+- top reels
+- top categories
+- top websites
+- top traffic sources
+
+---
+
+# USER TABLE
+
+Show:
+- user full name
+- Gmail/email
+- account status
+- reels generated
+- reel downloads
+- clicks
+- campaigns
+- latest activity
+
+---
+
+# USER DETAIL ANALYTICS
+
+When admin opens user:
+show:
+- clicks graph
+- top reels
+- top categories
+- country analytics
+- device analytics
+- latest downloads
+- latest clicks
+- activity logs
+
+---
+
+# LIVE CLICK FEED
+
+Realtime feed:
+- user name
+- Gmail
+- reel title
+- source category
+- platform
+- country
+- device
+- timestamp
+
+Use Socket.IO.
+
+---
+
+# STORAGE SYSTEM
+
+Initially:
+- local storage
+
+Upgradeable later to:
+- Cloudflare R2
+
+Store:
+- reels
+- thumbnails
+- rendered MP4s
+- cached assets
+
+---
+
+# REDIS + QUEUE SYSTEM
+
+Use:
+- Redis
+- BullMQ
+
+Queues:
+- scraping
+- rendering
+- image processing
+- analytics
+- retries
+
+---
+
+# SECURITY SYSTEM
+
+Implement:
+- JWT auth
+- bcrypt hashing
+- encrypted API keys
+- RBAC permissions
+- XSS protection
+- rate limiting
+- secure sessions
+
+---
+
+# FRONTEND PAGES
+
+## User Pages
+- Login
+- Register
+- Dashboard
+- Reel Generator
+- Downloads
+- Analytics
+- URL Shortener
+- Settings
+
+## Admin Pages
+- Overview
+- Users
+- Analytics
+- Website Sources
+- Categories
+- API Keys
+- Live Clicks
+- Logs
+- Settings
+
+---
+
+# IMPORTANT FINAL RULES
+
+- ALL websites controlled by admin
+- Sub users cannot add websites
+- ALWAYS use source website images
+- ALWAYS generate unique UTM links
+- NEVER reuse repetitive links
+- ALWAYS rotate random articles
+- ALWAYS avoid duplicate assignments
+- ALL analytics centralized
+- ALL clicks visible to admin
+- Support thousands of users
+- NEVER crash if AI fails
+- ALWAYS rotate free AI providers
+- Every reel must feel cinematic and viral
+- Use ONLY FREE rendering architecture
+
+---
+
+# FINAL BUILD INSTRUCTION
+
+Build ReelsPro as a production-grade cinematic suspense reel generation SaaS capable of:
+
+- category-based article scraping
+- intelligent article rotation
+- suspense reel generation
+- cinematic subtitle reels
+- dynamic music matching
+- reel customization studio
+- dynamic UTM short links
+- realtime analytics
+- scalable rendering queues
+- centralized admin control
+- viral traffic monitoring
+
+The platform must feel:
+- modern
+- cinematic
+- viral
+- lightweight
+- fast
+- scalable
+- production-ready

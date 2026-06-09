@@ -1,0 +1,1185 @@
+# ReelsPro Ultimate v12 — BUG FIX + MISSING FEATURES BUILD PROMPT
+
+You are a senior SaaS backend/frontend developer.
+
+Your job is to FIX bugs and build missing features in an existing ReelsPro project.
+
+---
+
+## ⛔ MOST IMPORTANT RULE — DO NOT TOUCH THESE
+
+The following systems are already built and working correctly.
+DO NOT modify, rewrite, or break them under any circumstances:
+
+- ✅ User auth (JWT, login, register, approval flow)
+- ✅ Admin user approval system (approve/reject/suspend)
+- ✅ Website source + category management (admin only)
+- ✅ Article scraping engine (Cheerio + RSS parser) — only extend, do not rewrite
+- ✅ Article pool with cooldown + virality score
+- ✅ Random article distribution with Redis locking
+- ✅ Basic reels table structure (already has: theme, hashtags, music_file, scenes_json, render_progress, duration)
+- ✅ Basic clicks table structure (already has: source_category, utm_source, utm_campaign)
+- ✅ BullMQ + Redis setup
+- ✅ Frontend routing (React Router v6)
+- ✅ Basic admin pages structure
+- ✅ Tailwind + Vite + Zustand + Recharts
+- ✅ platformDetector.js
+- ✅ activityLogService.js
+- ✅ Admin APIs: /api/admin/analytics, /analytics/export, /queues
+- ✅ Richer /overview API
+- ✅ Enhanced click feed
+- ✅ User detail API
+- ✅ URL campaigns API: GET /api/reels/campaigns
+- ✅ Configurable article_cooldown_minutes in system_settings
+- ✅ Frontend route /shortener
+- ✅ Frontend route /admin/analytics
+- ✅ Frontend route /admin/live-clicks
+- ✅ Frontend route /admin/logs
+- ✅ Frontend route /admin/queues
+- ✅ Admin Dashboard
+- ✅ User Details page
+- ✅ System Settings page
+- ✅ Socket.IO (already working for live click feed)
+- ✅ Music folders: backend/assets/music/{horror,mystery,emotional,crime,shocking,suspense,funny,motivational}/
+
+---
+
+## 🔴 FIX 1 — DATABASE: clicks.reel_id TYPE MISMATCH (CRITICAL)
+
+File: backend/src/config/migrate.js
+
+Problem: clicks.reel_id is INTEGER but reels.id is TEXT (UUID).
+This breaks ALL analytics JOIN queries silently.
+
+Fix — add this migration block in migrate.js after existing table creation:
+
+try {
+  const col = db.prepare("PRAGMA table_info(clicks)").all().find(c => c.name === 'reel_id');
+  if (col && col.type === 'INTEGER') {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS clicks_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reel_id TEXT,
+        user_id INTEGER,
+        campaign_id TEXT,
+        platform TEXT,
+        country TEXT,
+        city TEXT,
+        browser TEXT,
+        os TEXT,
+        device TEXT,
+        ip_address TEXT,
+        referrer TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        source_category TEXT,
+        utm_source TEXT,
+        utm_campaign TEXT,
+        FOREIGN KEY (reel_id) REFERENCES reels(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+      INSERT INTO clicks_new SELECT id, CAST(reel_id AS TEXT), user_id, campaign_id,
+        platform, country, city, browser, os, device, ip_address, referrer,
+        created_at, source_category, utm_source, utm_campaign FROM clicks;
+      DROP TABLE clicks;
+      ALTER TABLE clicks_new RENAME TO clicks;
+    `);
+    console.log('Migration: clicks.reel_id fixed to TEXT');
+  }
+} catch (e) {
+  console.log('clicks migration skipped:', e.message);
+}
+
+---
+
+## 🔴 FIX 2 — DATABASE: api_keys MISSING COLUMNS
+
+File: backend/src/config/migrate.js
+
+Problem: api_keys table is missing columns needed by the AI rotation system.
+
+Fix — add these columns with try/catch:
+
+const apiKeyMigrations = [
+  "ALTER TABLE api_keys ADD COLUMN is_active BOOLEAN DEFAULT 1",
+  "ALTER TABLE api_keys ADD COLUMN quota_exceeded BOOLEAN DEFAULT 0",
+  "ALTER TABLE api_keys ADD COLUMN quota_reset_at DATETIME",
+  "ALTER TABLE api_keys ADD COLUMN model TEXT",
+  "ALTER TABLE api_keys ADD COLUMN label TEXT"
+];
+for (const sql of apiKeyMigrations) {
+  try { db.prepare(sql).run(); } catch (e) {}
+}
+
+---
+
+## 🔴 FIX 3 — DATABASE: music_library MISSING UNIQUE CONSTRAINT
+
+File: backend/src/config/migrate.js
+
+Problem: No unique constraint on music_library.file_path.
+scanMusicLibrary() uses INSERT OR IGNORE but it will never ignore without a unique key.
+Result: duplicate entries on every server restart.
+
+Fix:
+
+try {
+  db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_music_filepath ON music_library(file_path)").run();
+} catch (e) {}
+
+---
+
+## 🔴 FIX 4 — DATABASE: ADD MISSING PERFORMANCE INDEXES
+
+File: backend/src/config/migrate.js
+
+Problem: Critical query paths have no indexes — will be extremely slow at scale.
+
+Fix:
+
+const missingIndexes = [
+  "CREATE INDEX IF NOT EXISTS idx_clicks_user_id ON clicks(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_clicks_reel_id ON clicks(reel_id)",
+  "CREATE INDEX IF NOT EXISTS idx_clicks_created_at ON clicks(created_at)",
+  "CREATE INDEX IF NOT EXISTS idx_reels_user_id ON reels(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_reels_status ON reels(status)",
+  "CREATE INDEX IF NOT EXISTS idx_reels_created_at ON reels(created_at)",
+  "CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_utm_links_user_id ON utm_links(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_utm_links_reel_id ON utm_links(reel_id)",
+  "CREATE INDEX IF NOT EXISTS idx_render_jobs_user_id ON render_jobs(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_render_jobs_status ON render_jobs(status)"
+];
+for (const sql of missingIndexes) {
+  try { db.prepare(sql).run(); } catch (e) {}
+}
+
+---
+
+## 🔴 FIX 5 — DATABASE: system_settings MISSING COLUMNS
+
+File: backend/src/config/migrate.js
+
+Problem: Several settings referenced in code do not exist in DB.
+
+Fix:
+
+const settingsMigrations = [
+  "ALTER TABLE system_settings ADD COLUMN storage_type TEXT DEFAULT 'local'",
+  "ALTER TABLE system_settings ADD COLUMN default_theme TEXT DEFAULT 'suspense'",
+  "ALTER TABLE system_settings ADD COLUMN max_concurrent_renders INTEGER DEFAULT 2",
+  "ALTER TABLE system_settings ADD COLUMN rate_limit_requests INTEGER DEFAULT 100"
+];
+for (const sql of settingsMigrations) {
+  try { db.prepare(sql).run(); } catch (e) {}
+}
+
+---
+
+## 🔴 FIX 6 — PHASE H: reels INSERT QUERY VALUE COUNT MISMATCH
+
+File: backend/src/routes/reels.js
+
+Problem: The INSERT has 13 columns but only 11 values — throws SQLite error every time.
+
+Find this broken INSERT and replace it:
+
+db.prepare(`
+  INSERT INTO reels (id, user_id, article_id, status, short_url, utm_code, campaign_token,
+                     caption, theme, hashtags, music_file, scenes_json, render_progress)
+  VALUES (?, ?, ?, 'rendering', ?, ?, ?, ?, ?, ?, ?, ?, 0)
+`).run(
+  reelId,
+  userId,
+  article.id,
+  shortLink.shortUrl,
+  shortLink.utmCode,
+  shortLink.campaignToken,
+  script.caption,
+  theme,
+  JSON.stringify(script.hashtags),
+  music ? music.filename : null,
+  JSON.stringify(script.scenes)
+);
+
+---
+
+## 🔴 FIX 7 — render_service.js: MISSING IMPORTS + execPromise UNDEFINED
+
+File: backend/src/services/render_service.js
+
+Problem: path, fs, and execPromise are used but never imported or defined. Render crashes immediately on start.
+
+Add at the very top of the file:
+
+const path = require('path');
+const fs = require('fs');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execPromise = promisify(exec);
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('ffmpeg-static');
+ffmpeg.setFfmpegPath(ffmpegPath);
+
+---
+
+## 🔴 FIX 8 — Remotion: 'suspense' THEME MISSING in themes.ts
+
+File: frontend/src/remotion/compositions/themes.ts
+
+Problem: Root.tsx uses theme: 'suspense' as default but 'suspense' is not defined in themes.ts.
+Every default reel crashes or renders blank.
+
+Replace the entire themes object with:
+
+export const themes: Record<string, ThemeConfig> = {
+  horror:      { overlayColor: '#1a0000cc', textColor: '#ff3333', grainOpacity: 0.4, glowColor: '#ff0000' },
+  mystery:     { overlayColor: '#00001acc', textColor: '#6699ff', grainOpacity: 0.3, glowColor: '#0044ff' },
+  crime:       { overlayColor: '#0d0d0dcc', textColor: '#ffffff', grainOpacity: 0.5, glowColor: '#888888' },
+  emotional:   { overlayColor: '#1a0a00cc', textColor: '#ffcc88', grainOpacity: 0.1, glowColor: '#ff8800' },
+  tiktok:      { overlayColor: '#000000aa', textColor: '#00f2ea', grainOpacity: 0.0, glowColor: '#00f2ea' },
+  dark:        { overlayColor: '#000000dd', textColor: '#cccccc', grainOpacity: 0.6, glowColor: '#ffffff' },
+  suspense:    { overlayColor: '#0a0a1acc', textColor: '#e0e0ff', grainOpacity: 0.35, glowColor: '#8888ff' },
+};
+
+Also add this fallback inside ReelComposition.tsx:
+
+const activeTheme = themes[theme] ?? themes['suspense'];
+
+---
+
+## 🔴 FIX 9 — Remotion: RENDER COMMAND MISSING --sequence FLAG
+
+File: backend/src/services/render_service.js
+
+Problem: Remotion frame-sequence export requires --sequence flag.
+Without it Remotion renders a final video instead of PNG frames for FFmpeg.
+Also remotion.config.ts must exist.
+
+Fix the render command:
+
+await execPromise(
+  `npx remotion render ReelComposition "${tempDir}/frames" --sequence --props='${JSON.stringify({ scenes: scenesJson, theme, articleImageUrl })}' --frames=0-299`,
+  { cwd: path.join(__dirname, '../../../frontend') }
+);
+
+Also create frontend/remotion.config.ts if it does not exist:
+
+import { Config } from '@remotion/cli/config';
+Config.setVideoImageFormat('png');
+Config.setOverwriteOutput(true);
+
+---
+
+## 🔴 FIX 10 — approve_user.js: HARDCODED CREDENTIALS + NO ERROR HANDLING
+
+File: approve_user.js (root level)
+
+Problem: Email is hardcoded, no try/catch, no activity log, dangerous in production.
+
+Replace entire file with:
+
+const db = require('./backend/src/config/db');
+
+const email = process.argv[2];
+
+if (!email) {
+  console.error('Usage: node approve_user.js <email>');
+  process.exit(1);
+}
+
+try {
+  const user = db.prepare("SELECT id, name, email, status FROM users WHERE email = ?").get(email);
+
+  if (!user) {
+    console.error('User not found: ' + email);
+    process.exit(1);
+  }
+
+  db.prepare("UPDATE users SET role = 'admin', status = 'approved' WHERE email = ?").run(email);
+
+  db.prepare(`
+    INSERT INTO activity_logs (user_id, action, details)
+    VALUES (?, 'admin_promoted', ?)
+  `).run(user.id, JSON.stringify({ email, promotedAt: new Date().toISOString(), by: 'cli_script' }));
+
+  console.log('✅ User approved and promoted to admin: ' + user.name + ' (' + email + ')');
+} catch (err) {
+  console.error('❌ Failed:', err.message);
+  process.exit(1);
+}
+
+Usage: node approve_user.js someone@email.com
+
+---
+
+## 🔴 BUILD — PHASE C: ai_provider_service.js (MISSING — BUILD FROM SCRATCH)
+
+Create file: backend/src/services/ai_provider_service.js
+
+Priority order:
+1. User own API key (api_keys WHERE owner_id = userId AND provider = X AND is_active = 1 AND quota_exceeded = 0)
+2. Admin API key (api_keys WHERE type = 'admin' AND provider = X AND is_active = 1 AND quota_exceeded = 0)
+3. System pool rotation
+4. Local fallback templates — NEVER throw error
+
+Build these exact functions:
+
+async function getAvailableProvider(userId)
+// Returns: { provider: 'groq'|'gemini'|'openrouter'|'huggingface', apiKey: string, model: string }
+
+async function callGroq(prompt, model, apiKey)
+// POST https://api.groq.com/openai/v1/chat/completions
+// models: 'llama-3-70b-8192', 'mixtral-8x7b-32768'
+// Headers: Authorization: Bearer {apiKey}, Content-Type: application/json
+// Body: { model, messages: [{ role: 'user', content: prompt }], temperature: 0.7 }
+// Return: response.choices[0].message.content
+
+async function callGemini(prompt, model, apiKey)
+// POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}
+// models: 'gemini-1.5-flash', 'gemini-2.0-flash'
+// Body: { contents: [{ parts: [{ text: prompt }] }] }
+// Return: response.candidates[0].content.parts[0].text
+
+async function callOpenRouter(prompt, model, apiKey)
+// POST https://openrouter.ai/api/v1/chat/completions
+// Headers: Authorization: Bearer {apiKey}, HTTP-Referer: 'https://reelspro.app'
+// Use free model: 'meta-llama/llama-3.1-8b-instruct:free'
+// Return: response.choices[0].message.content
+
+async function callHuggingFace(prompt, model, apiKey)
+// POST https://api-inference.huggingface.co/models/{model}
+// model: 'mistralai/Mistral-7B-Instruct-v0.2'
+// Headers: Authorization: Bearer {apiKey}
+// Body: { inputs: prompt }
+// Return: response[0].generated_text
+
+function fallbackToTemplate(articleTitle, emotion)
+// Return hardcoded scenes JSON based on emotion — NEVER throw
+// Default fallback scenes:
+// { id:1, type:'hook',        text:'You won\'t believe this...',        duration:2.0 }
+// { id:2, type:'beat',        text:'The truth is shocking.',            duration:2.0 }
+// { id:3, type:'beat',        text:'No one saw this coming.',           duration:2.0 }
+// { id:4, type:'cliffhanger', text:'What happened next?',              duration:2.0 }
+// { id:5, type:'cta',         text:'📖 Full Read Story Details In Comments 👇', duration:2.0 }
+// Return: { scenes, aiProvider: 'fallback', aiModel: 'template' }
+
+async function rotateOnQuotaExceeded(failedProvider, apiKeyId)
+// UPDATE api_keys SET quota_exceeded=1, quota_reset_at=datetime('now','+1 hour') WHERE id=apiKeyId
+// Then retry getAvailableProvider excluding failed one
+
+Add AES-256 encryption for stored API keys:
+
+const crypto = require('crypto');
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // must be exactly 32 chars in .env
+
+function encryptApiKey(text) {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+  let encrypted = cipher.update(text);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decryptApiKey(text) {
+  try {
+    const parts = text.split(':');
+    const iv = Buffer.from(parts[0], 'hex');
+    const encryptedText = Buffer.from(parts[1], 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+    let decrypted = decipher.update(encryptedText);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    return decrypted.toString();
+  } catch (e) {
+    return text; // fallback if not encrypted
+  }
+}
+
+RULE: Wrap every provider call in try/catch.
+If ALL providers fail → call fallbackToTemplate().
+NEVER let reel generation crash because of AI failure.
+
+---
+
+## 🔴 BUILD — PHASE D: reel_script_service.js (MISSING — BUILD FROM SCRATCH)
+
+Create file: backend/src/services/reel_script_service.js
+
+const aiProviderService = require('./ai_provider_service');
+
+async function generateSuspenseScenes(articleTitle, articleContent, emotion, userId) {
+  const prompt = `
+    You are a viral suspense reel writer.
+    Convert this article into exactly 5 short suspense scenes for a 10-second video reel.
+
+    Article Title: ${articleTitle}
+    Article Content: ${(articleContent || articleTitle).substring(0, 1000)}
+    Emotion: ${emotion}
+
+    Rules:
+    - Each scene: maximum 8 words
+    - Scene 1: Shocking hook (grab attention instantly)
+    - Scene 2-3: Suspense buildup (short punchy facts)
+    - Scene 4: Cliffhanger (leave them wanting more)
+    - Scene 5: ALWAYS exactly → "📖 Full Read Story Details In Comments 👇"
+    - Tone: dark, cinematic, suspenseful
+    - NO full sentences. Short. Punchy. Dramatic.
+
+    Return ONLY valid JSON, no explanation, no markdown:
+    {"scenes":[{"id":1,"type":"hook","text":"...","duration":2.0},{"id":2,"type":"beat","text":"...","duration":2.0},{"id":3,"type":"beat","text":"...","duration":2.0},{"id":4,"type":"cliffhanger","text":"...","duration":2.0},{"id":5,"type":"cta","text":"📖 Full Read Story Details In Comments 👇","duration":2.0}]}
+  `;
+
+  let result;
+  try {
+    const provider = await aiProviderService.getAvailableProvider(userId);
+    let rawResponse;
+
+    if (provider.provider === 'groq') rawResponse = await aiProviderService.callGroq(prompt, provider.model, provider.apiKey);
+    else if (provider.provider === 'gemini') rawResponse = await aiProviderService.callGemini(prompt, provider.model, provider.apiKey);
+    else if (provider.provider === 'openrouter') rawResponse = await aiProviderService.callOpenRouter(prompt, provider.model, provider.apiKey);
+    else rawResponse = await aiProviderService.callHuggingFace(prompt, provider.model, provider.apiKey);
+
+    const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in AI response');
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    result = {
+      scenes: calculateSceneTiming(parsed.scenes),
+      caption: generateCaption(parsed.scenes, emotion, articleTitle),
+      hashtags: generateHashtags(emotion),
+      cta: generateCTA(),
+      aiProvider: provider.provider,
+      aiModel: provider.model
+    };
+  } catch (err) {
+    console.error('AI scene generation failed, using fallback:', err.message);
+    const fallback = aiProviderService.fallbackToTemplate(articleTitle, emotion);
+    result = {
+      scenes: fallback.scenes,
+      caption: generateCaption(fallback.scenes, emotion, articleTitle),
+      hashtags: generateHashtags(emotion),
+      cta: generateCTA(),
+      aiProvider: 'fallback',
+      aiModel: 'template'
+    };
+  }
+
+  return result;
+}
+
+function generateCaption(scenes, category, articleTitle) {
+  const sceneTexts = scenes.filter(s => s.type !== 'cta').map(s => s.text).join(' ');
+  return `${sceneTexts}\n\n${articleTitle}\n\n📖 Full Read Story Details In Comments 👇`;
+}
+
+function generateHashtags(emotion) {
+  const base = ['#viral','#fyp','#trending','#reels','#story','#news','#facts','#shocking'];
+  const emotionTags = {
+    horror:       ['#horror','#scary','#creepy','#dark','#haunted','#terrifying','#spooky'],
+    mystery:      ['#mystery','#unsolved','#missing','#secret','#unknown','#strange','#weird'],
+    crime:        ['#crime','#truecrime','#criminal','#police','#justice','#fraud','#scam'],
+    emotional:    ['#emotional','#heartbreaking','#family','#love','#sad','#touching','#tears'],
+    shocking:     ['#shocking','#unbelievable','#exposed','#leaked','#scandal','#omg','#viral'],
+    suspense:     ['#suspense','#thriller','#danger','#warning','#escape','#chase','#intense'],
+    funny:        ['#funny','#comedy','#hilarious','#lol','#humor','#laugh','#prank'],
+    motivational: ['#motivation','#success','#mindset','#hustle','#inspire','#goals','#rich']
+  };
+  return [...base, ...(emotionTags[emotion] || emotionTags.suspense)].slice(0, 25);
+}
+
+function generateCTA() {
+  return '📖 Full Read Story Details In Comments 👇';
+}
+
+function calculateSceneTiming(scenes) {
+  if (!scenes || scenes.length === 0) return scenes;
+  const ctaDuration = 2.0;
+  const otherScenes = scenes.filter(s => s.type !== 'cta');
+  const otherDuration = (10 - ctaDuration) / otherScenes.length;
+  return scenes.map(s => ({
+    ...s,
+    duration: s.type === 'cta' ? ctaDuration : parseFloat(otherDuration.toFixed(2))
+  }));
+}
+
+module.exports = { generateSuspenseScenes, generateCaption, generateHashtags, generateCTA, calculateSceneTiming };
+
+---
+
+## 🔴 BUILD — PHASE E: music_engine.js (MISSING — BUILD FROM SCRATCH)
+
+Create file: backend/src/services/music_engine.js
+
+const EMOTION_KEYWORDS = {
+  horror:       ['murder','dead','kill','blood','death','body','ghost','haunted','terrifying'],
+  mystery:      ['missing','vanished','secret','unknown','disappeared','hidden','strange'],
+  crime:        ['arrested','police','stolen','robbery','criminal','gang','fraud','scam'],
+  emotional:    ['family','mother','child','love','heartbreak','tears','cancer','died'],
+  shocking:     ['caught','exposed','leaked','scandal','shocking','unbelievable','viral'],
+  suspense:     ['thriller','chase','escape','trap','danger','warning','attack'],
+  funny:        ['funny','hilarious','comedy','laugh','prank','joke'],
+  motivational: ['success','rich','million','business','inspire','achieve']
+};
+
+function detectEmotion(title, content) {
+  const text = ((title || '') + ' ' + (content || '').substring(0, 500)).toLowerCase();
+  let bestEmotion = 'suspense';
+  let bestScore = 0;
+  for (const [emotion, keywords] of Object.entries(EMOTION_KEYWORDS)) {
+    const score = keywords.filter(kw => text.includes(kw)).length;
+    if (score > bestScore) { bestScore = score; bestEmotion = emotion; }
+  }
+  return bestEmotion;
+}
+
+function matchSoundtrack(emotion) {
+  const fs = require('fs');
+  const path = require('path');
+  const db = require('../config/db');
+
+  const tryFolder = (em) => {
+    const folder = path.join(__dirname, '../../assets/music', em);
+    if (!fs.existsSync(folder)) return null;
+    const files = fs.readdirSync(folder).filter(f => f.endsWith('.mp3') || f.endsWith('.wav'));
+    if (files.length === 0) return null;
+    return { folder, files, emotion: em };
+  };
+
+  let found = tryFolder(emotion) || tryFolder('suspense');
+  if (!found) return null;
+
+  // Pick file with lowest use_count from music_library
+  const tracked = db.prepare(
+    "SELECT * FROM music_library WHERE category = ? ORDER BY use_count ASC, RANDOM() LIMIT 1"
+  ).get(found.emotion);
+
+  let filename, filePath;
+  if (tracked) {
+    filename = tracked.filename;
+    filePath = tracked.file_path;
+  } else {
+    filename = found.files[Math.floor(Math.random() * found.files.length)];
+    filePath = path.join(found.folder, filename);
+  }
+
+  return { filename, filePath, emotion: found.emotion };
+}
+
+async function scanMusicLibrary() {
+  const fs = require('fs');
+  const path = require('path');
+  const db = require('../config/db');
+  const musicRoot = path.join(__dirname, '../../assets/music');
+  if (!fs.existsSync(musicRoot)) return;
+
+  let count = 0;
+  const folders = fs.readdirSync(musicRoot);
+  for (const category of folders) {
+    const folderPath = path.join(musicRoot, category);
+    if (!fs.statSync(folderPath).isDirectory()) continue;
+    const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.mp3') || f.endsWith('.wav'));
+    for (const filename of files) {
+      const filePath = path.join(folderPath, filename);
+      try {
+        db.prepare(`
+          INSERT OR IGNORE INTO music_library (filename, category, file_path)
+          VALUES (?, ?, ?)
+        `).run(filename, category, filePath);
+        count++;
+      } catch (e) {}
+    }
+  }
+  console.log('Music library scanned: ' + count + ' tracks found');
+}
+
+function prepareMusicConfig(filePath, reelDuration) {
+  return {
+    inputPath: filePath,
+    duration: reelDuration,
+    fadeIn: 0.5,
+    fadeOut: 1.0,
+    volume: 0.7,
+    audioFilter: `afade=in:d=0.5,afade=out:st=${reelDuration - 1}:d=1,volume=0.7`
+  };
+}
+
+module.exports = { detectEmotion, matchSoundtrack, scanMusicLibrary, prepareMusicConfig };
+
+Call scanMusicLibrary() in backend/src/app.js on server startup:
+
+const musicEngine = require('./services/music_engine');
+musicEngine.scanMusicLibrary();
+
+---
+
+## 🔴 BUILD — PHASE F: Remotion Compositions (MISSING — BUILD FROM SCRATCH)
+
+Install in frontend folder:
+
+npm install @remotion/core @remotion/player @remotion/renderer @remotion/cli remotion
+
+Create this folder structure:
+
+frontend/src/remotion/
+├── Root.tsx
+├── index.ts
+├── types.ts
+└── compositions/
+    ├── ReelComposition.tsx
+    ├── SceneLayer.tsx
+    ├── SubtitleLayer.tsx
+    ├── OverlayLayer.tsx
+    ├── CTAScene.tsx
+    └── themes.ts
+
+types.ts:
+
+export interface Scene {
+  id: number;
+  type: 'hook' | 'beat' | 'cliffhanger' | 'cta';
+  text: string;
+  duration: number;
+}
+
+export interface ThemeConfig {
+  overlayColor: string;
+  textColor: string;
+  grainOpacity: number;
+  glowColor: string;
+}
+
+export interface CustomizationOptions {
+  subtitleColor?: string;
+  subtitleSize?: number;
+  subtitlePosition?: 'top' | 'center' | 'bottom';
+  overlayOpacity?: number;
+  glowIntensity?: number;
+  zoomSpeed?: number;
+  grainOpacity?: number;
+}
+
+themes.ts — include ALL 7 themes (suspense was missing before):
+
+export const themes: Record<string, ThemeConfig> = {
+  horror:      { overlayColor: '#1a0000cc', textColor: '#ff3333', grainOpacity: 0.4, glowColor: '#ff0000' },
+  mystery:     { overlayColor: '#00001acc', textColor: '#6699ff', grainOpacity: 0.3, glowColor: '#0044ff' },
+  crime:       { overlayColor: '#0d0d0dcc', textColor: '#ffffff', grainOpacity: 0.5, glowColor: '#888888' },
+  emotional:   { overlayColor: '#1a0a00cc', textColor: '#ffcc88', grainOpacity: 0.1, glowColor: '#ff8800' },
+  tiktok:      { overlayColor: '#000000aa', textColor: '#00f2ea', grainOpacity: 0.0, glowColor: '#00f2ea' },
+  dark:        { overlayColor: '#000000dd', textColor: '#cccccc', grainOpacity: 0.6, glowColor: '#ffffff' },
+  suspense:    { overlayColor: '#0a0a1acc', textColor: '#e0e0ff', grainOpacity: 0.35, glowColor: '#8888ff' },
+};
+
+ReelComposition.tsx specs:
+- Width: 1080, Height: 1920, FPS: 30, Duration: 300 frames (10 seconds)
+- Loop through scenes array
+- Each scene takes (scene.duration * 30) frames
+- Render: SceneLayer + OverlayLayer + SubtitleLayer stacked
+- Last scene (type=cta): render CTAScene instead
+- const activeTheme = themes[theme] ?? themes['suspense']; — always fallback
+
+SceneLayer.tsx specs:
+- Full size background image (articleImageUrl)
+- Ken Burns zoom: interpolate(frame, [0, sceneDuration], [1.0, 1.08])
+- objectFit: cover
+
+SubtitleLayer.tsx specs:
+- spring() entrance animation (slide up + fade in)
+- Text positioned based on subtitlePosition prop (default bottom 25%)
+- Font: bold, large, with text-shadow glow
+- Use theme textColor (or custom subtitleColor if provided)
+- Exit: opacity fade last 6 frames of scene
+
+OverlayLayer.tsx specs:
+- Bottom gradient: linear-gradient(transparent, overlayColor)
+- Vignette: radial-gradient(ellipse, transparent 50%, rgba(0,0,0,0.6) 100%)
+- Film grain: animated noise using CSS
+- Subtle glow on subtitle area using glowColor
+
+CTAScene.tsx specs:
+- Black background
+- Center text: "📖 Full Read Story Details In Comments 👇"
+- spring() animation: slide up from y+50 to y=0, fade in
+- Text color: white, large bold font
+
+Root.tsx:
+
+import { Composition } from 'remotion';
+import { ReelComposition } from './compositions/ReelComposition';
+
+export const RemotionRoot = () => (
+  <Composition
+    id="ReelComposition"
+    component={ReelComposition}
+    durationInFrames={300}
+    fps={30}
+    width={1080}
+    height={1920}
+    defaultProps={{
+      scenes: [],
+      theme: 'suspense',
+      articleImageUrl: '',
+      customization: {}
+    }}
+  />
+);
+
+Also create frontend/remotion.config.ts:
+
+import { Config } from '@remotion/cli/config';
+Config.setVideoImageFormat('png');
+Config.setOverwriteOutput(true);
+
+---
+
+## 🔴 BUILD — PHASE G: render_service.js + render_worker.js (MISSING — BUILD FROM SCRATCH)
+
+Install in backend:
+
+npm install fluent-ffmpeg ffmpeg-static
+
+Create these folders:
+
+backend/storage/reels/
+backend/storage/thumbnails/
+backend/temp/
+
+Add to backend/src/app.js:
+
+app.use('/storage', express.static(path.join(__dirname, '../storage')));
+
+Create file: backend/src/services/render_service.js
+
+Start with these imports (FIX 7 applied):
+
+const path = require('path');
+const fs = require('fs');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execPromise = promisify(exec);
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('ffmpeg-static');
+ffmpeg.setFfmpegPath(ffmpegPath);
+
+async function renderReel({ reelId, scenesJson, musicPath, theme, articleImageUrl, onProgress }) {
+  const tempDir = path.join(__dirname, '../../temp', reelId);
+  const outputPath = path.join(__dirname, '../../storage/reels', reelId + '.mp4');
+  const thumbPath = path.join(__dirname, '../../storage/thumbnails', reelId + '.jpg');
+
+  // Step 1: Create temp dir
+  fs.mkdirSync(tempDir, { recursive: true });
+
+  // Step 2: Remotion render frames (--sequence flag required)
+  if (onProgress) onProgress(20);
+  await execPromise(
+    `npx remotion render ReelComposition "${tempDir}/frames" --sequence --props='${JSON.stringify({ scenes: scenesJson, theme, articleImageUrl })}' --frames=0-299`,
+    { cwd: path.join(__dirname, '../../../frontend') }
+  );
+
+  // Step 3: FFmpeg combine frames + audio → MP4
+  if (onProgress) onProgress(50);
+  await new Promise((resolve, reject) => {
+    const cmd = ffmpeg()
+      .input(tempDir + '/frames/%04d.png')
+      .inputOptions(['-framerate 30'])
+      .outputOptions(['-c:v libx264', '-preset fast', '-crf 23', '-movflags +faststart', '-pix_fmt yuv420p']);
+
+    if (musicPath && fs.existsSync(musicPath)) {
+      cmd.input(musicPath)
+         .audioCodec('aac')
+         .audioBitrate('128k')
+         .audioFilters('afade=in:d=0.5,afade=out:st=9:d=1,volume=0.7')
+         .outputOptions(['-shortest']);
+    }
+
+    cmd.output(outputPath).on('end', resolve).on('error', reject).run();
+  });
+
+  // Step 4: Generate thumbnail at 2 second mark
+  if (onProgress) onProgress(90);
+  await new Promise((resolve, reject) => {
+    ffmpeg(outputPath)
+      .screenshots({ timestamps: ['00:00:02'], filename: reelId + '.jpg', folder: path.dirname(thumbPath) })
+      .on('end', resolve).on('error', reject);
+  });
+
+  // Step 5: Cleanup temp frames
+  fs.rmSync(tempDir, { recursive: true, force: true });
+
+  if (onProgress) onProgress(100);
+  return { outputPath, thumbPath };
+}
+
+module.exports = { renderReel };
+
+Create file: backend/src/workers/render_worker.js
+
+const { Worker } = require('bullmq');
+const { redis } = require('../config/redis');
+const renderService = require('../services/render_service');
+const { getIO } = require('../services/socket_service');
+const db = require('../config/db');
+
+const renderWorker = new Worker('renderQueue', async (job) => {
+  const { reelId, userId, scenesJson, musicPath, theme, articleImageUrl } = job.data;
+
+  try {
+    db.prepare("UPDATE reels SET status='rendering', render_progress=10 WHERE id=?").run(reelId);
+    db.prepare("UPDATE render_jobs SET status='processing', started_at=CURRENT_TIMESTAMP WHERE reel_id=?").run(reelId);
+    getIO().emit('render_progress', { reelId, userId, progress: 10, status: 'rendering' });
+    job.updateProgress(10);
+
+    const { outputPath, thumbPath } = await renderService.renderReel({
+      reelId, scenesJson, musicPath, theme, articleImageUrl,
+      onProgress: (pct) => {
+        db.prepare("UPDATE reels SET render_progress=? WHERE id=?").run(pct, reelId);
+        getIO().emit('render_progress', { reelId, userId, progress: pct, status: 'rendering' });
+        job.updateProgress(pct);
+      }
+    });
+
+    const filePath = '/storage/reels/' + reelId + '.mp4';
+    const thumbnailPath = '/storage/thumbnails/' + reelId + '.jpg';
+    db.prepare("UPDATE reels SET status='done', file_path=?, thumbnail_path=?, render_progress=100 WHERE id=?")
+      .run(filePath, thumbnailPath, reelId);
+    db.prepare("UPDATE render_jobs SET status='completed', completed_at=CURRENT_TIMESTAMP, progress=100 WHERE reel_id=?")
+      .run(reelId);
+
+    getIO().emit('render_complete', { reelId, userId, downloadUrl: filePath, thumbnailUrl: thumbnailPath });
+    job.updateProgress(100);
+
+  } catch (err) {
+    db.prepare("UPDATE reels SET status='failed', render_progress=0 WHERE id=?").run(reelId);
+    db.prepare("UPDATE render_jobs SET status='failed', error_message=? WHERE reel_id=?").run(err.message, reelId);
+    getIO().emit('render_failed', { reelId, userId, error: err.message });
+    throw err;
+  }
+
+}, {
+  connection: redis,
+  concurrency: 2,
+  defaultJobOptions: { attempts: 3, backoff: { type: 'exponential', delay: 5000 } }
+});
+
+module.exports = { renderWorker };
+
+---
+
+## 🔴 BUILD — PHASE H: /api/reels/generate ENDPOINT (COMPLETE IT)
+
+File: backend/src/routes/reels.js
+
+Required imports (add if not present):
+
+const { v4: uuidv4 } = require('uuid');
+const musicEngine = require('../services/music_engine');
+const reelScriptService = require('../services/reel_script_service');
+const { renderQueue } = require('../config/queues');
+
+Build POST /api/reels/generate with this exact flow:
+
+router.post('/generate', authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+  const { theme = 'suspense', customization = {} } = req.body;
+
+  // 1. Select random unused article
+  const article = await articleService.getRandomArticle(userId);
+  if (!article) return res.status(404).json({ error: 'No articles available. Please wait for new articles to be scraped.' });
+
+  // 2. Detect emotion
+  const emotion = musicEngine.detectEmotion(article.title, article.content || '');
+
+  // 3. Generate scenes via AI
+  const script = await reelScriptService.generateSuspenseScenes(
+    article.title, article.content || article.title, emotion, userId
+  );
+
+  // 4. Match soundtrack
+  const music = musicEngine.matchSoundtrack(emotion);
+
+  // 5. Generate unique reel ID
+  const reelId = uuidv4();
+
+  // 6. Create UTM short link
+  const shortLink = await shortenerService.createLink(reelId, userId, article.url);
+
+  // 7. Insert reel record (FIX 6 applied — 11 values for 11 placeholders)
+  db.prepare(`
+    INSERT INTO reels (id, user_id, article_id, status, short_url, utm_code, campaign_token,
+                       caption, theme, hashtags, music_file, scenes_json, render_progress)
+    VALUES (?, ?, ?, 'rendering', ?, ?, ?, ?, ?, ?, ?, ?, 0)
+  `).run(
+    reelId, userId, article.id,
+    shortLink.shortUrl, shortLink.utmCode, shortLink.campaignToken,
+    script.caption, theme,
+    JSON.stringify(script.hashtags),
+    music ? music.filename : null,
+    JSON.stringify(script.scenes)
+  );
+
+  // 8. Save to reel_scripts
+  db.prepare(`
+    INSERT INTO reel_scripts (reel_id, article_id, scenes_json, caption, hashtags, ai_provider, ai_model)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(reelId, article.id, JSON.stringify(script.scenes), script.caption,
+          JSON.stringify(script.hashtags), script.aiProvider, script.aiModel);
+
+  // 9. Insert render_jobs record
+  db.prepare("INSERT INTO render_jobs (reel_id, user_id, status) VALUES (?, ?, 'queued')").run(reelId, userId);
+
+  // 10. Add to render queue
+  await renderQueue.add('renderReel', {
+    reelId, userId,
+    scenesJson: script.scenes,
+    musicPath: music ? music.filePath : null,
+    theme,
+    articleImageUrl: article.og_image || article.image,
+  });
+
+  // 11. Update user stats
+  db.prepare("UPDATE users SET reels_generated = reels_generated + 1 WHERE id=?").run(userId);
+
+  res.json({
+    success: true,
+    reelId,
+    status: 'rendering',
+    shortUrl: shortLink.shortUrl,
+    caption: script.caption,
+    hashtags: script.hashtags,
+    message: 'Reel is being generated. Listen to WebSocket events for progress.'
+  });
+});
+
+Also add these endpoints:
+
+router.get('/:id/status', authMiddleware, (req, res) => {
+  const reel = db.prepare('SELECT id, status, render_progress, file_path, thumbnail_path, short_url, caption FROM reels WHERE id=? AND user_id=?')
+    .get(req.params.id, req.user.id);
+  if (!reel) return res.status(404).json({ error: 'Reel not found' });
+  res.json(reel);
+});
+
+router.get('/:id/download', authMiddleware, (req, res) => {
+  const reel = db.prepare('SELECT file_path, status FROM reels WHERE id=? AND user_id=?')
+    .get(req.params.id, req.user.id);
+  if (!reel || reel.status !== 'done') return res.status(404).json({ error: 'Reel not ready' });
+  const fullPath = path.join(__dirname, '../../', reel.file_path);
+  if (!fs.existsSync(fullPath)) return res.status(404).json({ error: 'File not found' });
+  db.prepare("UPDATE users SET reel_downloads = reel_downloads + 1 WHERE id=?").run(req.user.id);
+  res.download(fullPath, 'reel-' + req.params.id + '.mp4');
+});
+
+router.get('/my-reels', authMiddleware, (req, res) => {
+  const { status, page = 1, limit = 12 } = req.query;
+  const offset = (page - 1) * limit;
+  let query = 'SELECT id, status, render_progress, file_path, thumbnail_path, short_url, caption, created_at FROM reels WHERE user_id=?';
+  const params = [req.user.id];
+  if (status) { query += ' AND status=?'; params.push(status); }
+  query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+  params.push(parseInt(limit), parseInt(offset));
+  const reels = db.prepare(query).all(...params);
+  const total = db.prepare('SELECT COUNT(*) as count FROM reels WHERE user_id=?' + (status ? ' AND status=?' : '')).get(...(status ? [req.user.id, status] : [req.user.id])).count;
+  res.json({ reels, total, page: parseInt(page), limit: parseInt(limit) });
+});
+
+---
+
+## 🟠 BUILD — PHASE I: Frontend Socket.IO Render Progress
+
+File: frontend/src/pages/ReelGenerator.tsx
+
+DO NOT remove existing socket code. Only ADD these new listeners.
+
+Add these states:
+
+const [currentReelId, setCurrentReelId] = useState<string | null>(null);
+const [isRendering, setIsRendering] = useState(false);
+const [renderProgress, setRenderProgress] = useState(0);
+const [renderStatus, setRenderStatus] = useState('');
+const [completedReel, setCompletedReel] = useState<{
+  downloadUrl: string;
+  thumbnailUrl: string;
+  caption: string;
+  shortUrl: string;
+} | null>(null);
+
+Add socket listeners in useEffect:
+
+useEffect(() => {
+  socket.on('render_progress', ({ reelId, progress, status }) => {
+    if (reelId === currentReelId) {
+      setRenderProgress(progress);
+      if (progress <= 20) setRenderStatus('Generating AI script...');
+      else if (progress <= 50) setRenderStatus('Rendering frames...');
+      else if (progress <= 80) setRenderStatus('Adding music...');
+      else setRenderStatus('Finalizing video...');
+    }
+  });
+
+  socket.on('render_complete', ({ reelId, downloadUrl, thumbnailUrl, caption, shortUrl }) => {
+    if (reelId === currentReelId) {
+      setIsRendering(false);
+      setCompletedReel({ downloadUrl, thumbnailUrl, caption, shortUrl });
+      toast.success('Your reel is ready! 🎬');
+    }
+  });
+
+  socket.on('render_failed', ({ reelId, error }) => {
+    if (reelId === currentReelId) {
+      setIsRendering(false);
+      toast.error('Reel generation failed. Please try again.');
+    }
+  });
+
+  return () => {
+    socket.off('render_progress');
+    socket.off('render_complete');
+    socket.off('render_failed');
+  };
+}, [currentReelId]);
+
+Show while isRendering === true:
+- Progress bar (0-100%) using renderProgress
+- Step label using renderStatus
+- Spinner animation
+
+Show when completedReel is set:
+- <img src={completedReel.thumbnailUrl} /> (video thumbnail preview)
+- [⬇ Download Reel] button → links to completedReel.downloadUrl
+- [📋 Copy Caption] button → copies completedReel.caption to clipboard
+- [🔗 Copy Comment Link] button → copies completedReel.shortUrl to clipboard
+
+---
+
+## 🟠 BUILD — PHASE J: ReelStudio.tsx Customization UI
+
+Create file: frontend/src/components/ReelStudio.tsx
+
+Place this component above the Generate button on ReelGenerator page.
+
+Section 1 — Theme Selector (horizontal scroll, 7 cards):
+Horror | Mystery | Crime | Emotional | TikTok Viral | Dark Cinematic | Suspense
+Each card: colored preview box + theme name. Selected card: glowing border.
+
+Section 2 — Subtitle Settings:
+- Text Color: <input type="color" defaultValue="#ffffff" />
+- Font Size: range slider 24-72px, show live px value
+- Position: 3 buttons [Top] [Center] [Bottom]
+
+Section 3 — Effects (range sliders 0-100, show live value):
+- Overlay Opacity
+- Zoom Speed
+- Film Grain
+- Glow Intensity
+
+Pass all values to POST /api/reels/generate as:
+
+{
+  "theme": "horror",
+  "customization": {
+    "subtitleColor": "#ff3333",
+    "subtitleSize": 42,
+    "subtitlePosition": "bottom",
+    "overlayOpacity": 70,
+    "zoomSpeed": 50,
+    "grainOpacity": 40,
+    "glowIntensity": 60
+  }
+}
+
+---
+
+## 🟠 BUILD — PHASE K: Security Hardening
+
+Install in backend:
+
+npm install helmet express-rate-limit express-validator
+
+Add to backend/src/app.js (do not remove existing middleware):
+
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+app.use(helmet());
+
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests, please try again later.' }
+}));
+
+app.use('/api/auth', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many login attempts, please try again later.' }
+}));
+
+Add to .env file:
+
+ENCRYPTION_KEY=your_random_32_character_string_here
+
+---
+
+## 🟡 BUILD — PHASE L: Downloads Gallery Page
+
+File: frontend/src/pages/Downloads.tsx
+
+API: GET /api/reels/my-reels?status=done&page=1&limit=12
+
+UI:
+- Grid layout (3 col desktop, 2 tablet, 1 mobile)
+- Each card: thumbnail, caption preview (60 chars), date, status badge
+- Per card buttons: [⬇ Download] [📋 Copy Caption] [🔗 Copy Link]
+- Filter bar: All / Done / Rendering / Failed
+- Pagination: 12 per page, prev/next
+- Empty state: "No reels yet. Go to Reel Generator to create your first reel! 🎬"
+
+---
+
+## 🟡 BUILD — PHASE M: UI Polish
+
+Apply to all pages without breaking existing layout:
+
+1. Skeleton loaders — create reusable SkeletonCard.tsx using Tailwind animate-pulse
+2. Empty states — add for: no reels, no clicks, no articles, no website sources
+3. Error boundaries — create ErrorBoundary.tsx, wrap each page-level route in App.tsx
+4. Toast notifications — fire react-hot-toast for: reel generated, download started, caption copied, link copied, any API error
+5. Mobile responsive — audit Dashboard, Reel Generator, Downloads, Admin Overview
+6. Dark mode — fix any white/light backgrounds breaking dark theme
+
+---
+
+## 📋 BUILD ORDER — FOLLOW EXACTLY
+
+FIX 1  → clicks.reel_id type fix (migrate.js)
+FIX 2  → api_keys missing columns (migrate.js)
+FIX 3  → music_library unique index (migrate.js)
+FIX 4  → missing performance indexes (migrate.js)
+FIX 5  → system_settings missing columns (migrate.js)
+FIX 6  → reels INSERT value count (reels.js)
+FIX 7  → render_service missing imports
+FIX 8  → suspense theme missing (themes.ts)
+FIX 9  → Remotion --sequence flag fix
+FIX 10 → approve_user.js fix
+
+BUILD C → ai_provider_service.js
+BUILD D → reel_script_service.js
+BUILD E → music_engine.js
+BUILD F → Remotion compositions (all files)
+BUILD G → render_service.js + render_worker.js
+BUILD H → /api/reels/generate + status + download + my-reels
+BUILD I → Frontend Socket.IO render progress
+BUILD J → ReelStudio.tsx customization UI
+BUILD K → Security hardening
+BUILD L → Downloads Gallery page
+BUILD M → UI Polish
+
+---
+
+## FINAL REMINDERS
+
+1. Run migrations first and verify no data loss before anything else
+2. Test full end-to-end reel generation after BUILD C through H before continuing
+3. DO NOT rebuild anything from the Already Built list at the top
+4. Commit after each phase — never mix multiple phases in one commit
+5. ENCRYPTION_KEY must be in .env before Phase K goes live
+6. scanMusicLibrary() must be called in app.js on server startup after Phase E

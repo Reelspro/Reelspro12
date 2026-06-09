@@ -1,0 +1,470 @@
+# ReelsPro Ultimate v12 — COMPLETE DEVELOPMENT WORKFLOW
+
+IMPORTANT:
+Read MASTER_PROMPT.md first before every phase.
+
+DO NOT overwrite previous architecture.
+ONLY extend existing production structure carefully.
+
+---
+
+# PHASE 1 — PROJECT INITIALIZATION
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- backend initialization
+- frontend initialization
+- folder structure
+- Vite setup
+- Tailwind setup
+- Express server setup
+- environment configs
+- shared config architecture
+- production-ready folder structure
+
+Do NOT build business logic yet.
+
+---
+
+# PHASE 2 — DATABASE + SQLITE ARCHITECTURE
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- SQLite database
+- better-sqlite3 setup
+- migrations system
+- tables
+- indexes
+- relations
+- Redis connection
+- BullMQ queues
+- database helper services
+
+Create ALL tables from MASTER_PROMPT.md.
+
+Do NOT build frontend yet.
+
+---
+
+# PHASE 3 — AUTHENTICATION SYSTEM
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- JWT authentication
+- login/register APIs
+- pending approval system
+- role system
+- admin approval workflow
+- password hashing
+- protected routes
+- auth middleware
+- Zustand auth store
+- frontend login/register pages
+
+Do NOT build reels system yet.
+
+---
+
+# PHASE 4 — ADMIN WEBSITE SOURCE SYSTEM
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- admin website management
+- category URL management
+- website CRUD
+- category CRUD
+- article source storage
+- source validation
+- admin-only permissions
+- frontend admin source pages
+
+Sub users must NOT add websites.
+
+---
+
+# PHASE 5 — ARTICLE SCRAPING ENGINE
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- article scraping engine
+- Cheerio scraper
+- RSS parser
+- OpenGraph image extraction
+- article pool system
+- cooldown logic
+- duplicate prevention
+- category fetch system
+- random article selector
+- Redis locking
+
+Store articles in centralized article pool.
+
+---
+
+# PHASE 6 — AI PROVIDER ROTATION SYSTEM
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- Groq integration
+- Gemini integration
+- OpenRouter integration
+- HuggingFace fallback
+- AI rotation system
+- quota fallback logic
+- provider priority system
+- encrypted API key storage
+- admin API manager
+- sub-user API manager
+
+NEVER crash if providers fail.
+
+---
+
+# PHASE 7 — REEL SCRIPT ENGINE
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- suspense scene generation
+- subtitle generator
+- CTA scene generation
+- caption generation
+- hashtag generation
+- scene timing system
+- cinematic pacing system
+
+DO NOT render videos yet.
+
+---
+
+# PHASE 8 — MUSIC ENGINE
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- local music library scanner
+- emotion detection
+- soundtrack matching
+- music trimming
+- fade in/out system
+- soundtrack randomizer
+- music metadata parser
+
+Use ONLY local music files.
+
+---
+
+# PHASE 9 — REMOTION REEL ENGINE
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- Remotion composition system
+- cinematic templates
+- subtitle animations
+- zoom effects
+- blur transitions
+- overlays
+- themes
+- reel customization studio
+- color customization
+- subtitle customization
+
+DO NOT render MP4 yet.
+
+---
+
+# PHASE 10 — FFMPEG RENDER PIPELINE
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- FFmpeg renderer
+- video export pipeline
+- MP4 rendering
+- thumbnail generation
+- compression
+- queue rendering
+- render retries
+- progress tracking
+
+Output production-ready MP4 reels.
+
+---
+
+# PHASE 11 — DOWNLOAD + EXPORT SYSTEM
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- reel downloads
+- caption export
+- comment export
+- reel history
+- storage system
+- local asset management
+- generated reels gallery
+
+After reel generation show:
+- Download Reel
+- Copy Caption
+- Copy Comment Link
+
+---
+
+# PHASE 12 — DYNAMIC URL SHORTENER + UTM SYSTEM
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- unique UTM generator
+- shortener engine
+- redirect system
+- tracking links
+- click logging
+- analytics collector
+- duplicate prevention
+
+IMPORTANT:
+Every generation MUST create NEW short links.
+
+NEVER reuse same links.
+
+---
+
+# PHASE 13 — CLICK TRACKING + ANALYTICS
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- realtime analytics
+- platform detection
+- country detection
+- device detection
+- traffic source tracking
+- click feeds
+- charts APIs
+- analytics APIs
+- Socket.IO realtime updates
+
+---
+
+# PHASE 14 — USER DASHBOARD
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- user dashboard
+- analytics graphs
+- reel history
+- click analytics
+- top reels
+- top categories
+- recent activity
+- settings page
+
+---
+
+# PHASE 15 — ADMIN DASHBOARD
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- admin overview
+- users table
+- live clicks
+- analytics charts
+- website management
+- categories
+- API management
+- logs
+- system settings
+- user detail analytics
+
+Main admin sees EVERYTHING.
+
+---
+
+# PHASE 16 — USER MANAGEMENT SYSTEM
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- pending approvals
+- approve/reject users
+- suspend users
+- delete users
+- role management
+- activity logs
+- user analytics pages
+
+---
+
+# PHASE 17 — ADVANCED ANALYTICS ENGINE
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- top reels engine
+- top users engine
+- top categories
+- traffic growth
+- engagement tracking
+- realtime counters
+- growth charts
+- export analytics APIs
+
+---
+
+# PHASE 18 — REDIS + BULLMQ OPTIMIZATION
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- render queues
+- scraper queues
+- retry queues
+- concurrency optimization
+- memory optimization
+- queue monitoring
+- queue dashboard
+
+---
+
+# PHASE 19 — SECURITY HARDENING
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- rate limiting
+- RBAC
+- encrypted secrets
+- validation
+- XSS protection
+- CORS
+- helmet
+- API throttling
+- abuse prevention
+
+---
+
+# PHASE 20 — FINAL UI POLISH
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Build ONLY:
+- responsive polish
+- animations
+- loading states
+- skeleton loaders
+- empty states
+- cinematic UI
+- dark mode polish
+- dashboard refinements
+
+---
+
+# PHASE 21 — FINAL TESTING + BUG FIXING
+
+Prompt:
+
+Read MASTER_PROMPT.md carefully.
+
+Now:
+- test ALL APIs
+- test ALL frontend pages
+- test reel generation flow
+- test scraping flow
+- test analytics
+- test Redis queues
+- test rendering
+- fix bugs
+- optimize performance
+- remove duplicate code
+- production optimize everything
+
+---
+
+# IMPORTANT WORKFLOW RULES
+
+- Use SAME Cursor/Windsurf chat
+- Never restart architecture
+- Extend existing structure carefully
+- Test after every phase
+- Commit after every phase
+- Never overwrite old systems
+- Keep code modular
+- Keep services scalable
+- Keep queues isolated
+
+---
+
+# RECOMMENDED DEVELOPMENT ORDER
+
+1. Setup
+2. Database
+3. Auth
+4. Website Sources
+5. Scraper
+6. AI Providers
+7. Reel Scripts
+8. Music Engine
+9. Remotion
+10. FFmpeg
+11. Exports
+12. URL Shortener
+13. Analytics
+14. User Dashboard
+15. Admin Dashboard
+16. User Management
+17. Advanced Analytics
+18. Queues
+19. Security
+20. UI Polish
+21. Final Testing

@@ -1,0 +1,8 @@
+version: 1.2.0
+files:
+  - url: ReelsPro-Setup-1.2.0.exe
+    sha512: PLACEHOLDER_SHA512_HASH
+    size: 0
+path: ReelsPro-Setup-1.2.0.exe
+sha512: PLACEHOLDER_SHA512_HASH
+releaseDate: '2026-06-09T00:00:00.000Z'

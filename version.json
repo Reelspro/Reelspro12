@@ -1,0 +1,15 @@
+{
+  "version": "1.2.0",
+  "releaseDate": "2026-06-09",
+  "minVersion": "1.0.0",
+  "changelog": [
+    "Facebook-style Text Story Reel renderer added",
+    "Pastel backgrounds with decorative patterns",
+    "Bold Arial Black font - left aligned text",
+    "Accent color highlights for quotes and emphasis",
+    "Dark maroon footer bar",
+    "Redis-free rendering pipeline (direct execution)",
+    "Security middleware with rate limiting",
+    "Auto-update system added"
+  ]
+}
