@@ -18,9 +18,9 @@ const useReelStore = create((set, get) => ({
         params,
         headers: { Authorization: `Bearer ${token}` }
       });
-      set({ reels: response.data, isLoading: false });
+      set({ reels: Array.isArray(response.data) ? response.data : [], isLoading: false });
     } catch (error) {
-      set({ isLoading: false });
+      set({ reels: [], isLoading: false });
       toast.error(error.response?.data?.error || 'Failed to fetch reels history');
     }
   },
@@ -54,9 +54,9 @@ const useReelStore = create((set, get) => ({
       const response = await axios.get(`${API_URL}/reels/campaigns`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      set({ campaigns: response.data, isLoading: false });
+      set({ campaigns: Array.isArray(response.data) ? response.data : [], isLoading: false });
     } catch (error) {
-      set({ isLoading: false });
+      set({ campaigns: [], isLoading: false });
       toast.error(error.response?.data?.error || 'Failed to fetch short links');
     }
   },

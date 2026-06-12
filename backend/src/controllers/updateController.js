@@ -14,7 +14,7 @@ const path = require('path');
 const fs   = require('fs');
 const axios = require('axios');
 
-const ROOT_DIR    = path.resolve(__dirname, '../../../');
+const ROOT_DIR     = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../../');
 const VERSION_FILE = path.join(ROOT_DIR, 'version.json');
 
 /* ─── Helpers ───────────────────────────────────────── */

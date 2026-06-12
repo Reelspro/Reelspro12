@@ -106,17 +106,38 @@ app.use('/api/upload',    require('./routes/upload'));
    STATIC ASSETS — must come after route limiters
    ────────────────────────────────────────────────────────────── */
 const path = require('path');
-app.use('/output',           express.static(path.resolve(__dirname, '../../output')));
-app.use('/storage',          express.static(path.resolve(__dirname, '../../storage')));
-app.use('/storage/uploads',  express.static(path.join(__dirname, '../storage/uploads')));
-app.use('/assets',           express.static(path.resolve(__dirname, '../assets')));
+const fs = require('fs');
+
+const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../');
+app.use('/output',           express.static(path.join(rootDir, 'output')));
+app.use('/storage',          express.static(path.join(rootDir, 'storage')));
+app.use('/storage/uploads',  express.static(path.join(rootDir, 'storage/uploads')));
+
+const assetsDir = process.pkg ? path.join(rootDir, 'assets') : path.join(rootDir, 'backend/assets');
+app.use('/assets',           express.static(assetsDir));
+
+const frontendDist = process.pkg 
+  ? path.join(rootDir, 'frontend/dist') 
+  : path.resolve(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+}
 
 /* ──────────────────────────────────────────────────────────────
-   HEALTH CHECK
+   HEALTH CHECK & FRONTEND ROUTING FALLBACK
    ────────────────────────────────────────────────────────────── */
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'ReelsPro API is running' });
 });
+
+if (fs.existsSync(frontendDist)) {
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api/') || req.path.startsWith('/r/')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 /* ──────────────────────────────────────────────────────────────
    GLOBAL ERROR HANDLER

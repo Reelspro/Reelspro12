@@ -44,6 +44,55 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
   const lastScene = scenes[scenes.length - 1];
   const totalReelDuration = lastScene ? lastScene.end_time : Math.max(15, scenes.reduce((sum, s) => sum + s.duration, 0));
 
+  // Branch for Facebook Text Story reels
+  if (bgType === 'text_story') {
+    notify('Rendering text story cards & encoding video...', 30);
+    const { renderTextStoryReel } = require('./textStoryRenderer');
+    const destVideo = path.join(STORAGE_REELS, `${reelId}.mp4`);
+    
+    // Fallback if themeData.textStory is not fully set
+    const textStoryData = themeData?.textStory || {
+      scenes,
+      backgroundColor: '#FFE4E8',
+      patternId: 'pink_floral',
+      accentColor: '#B22222',
+      username: 'Sarah Storyteller',
+      footerText: 'Full Story In First Comment 👇'
+    };
+
+    await renderTextStoryReel(
+      textStoryData,
+      destVideo,
+      {
+        musicPath,
+        voiceoverPath: null, // text stories use background music only
+        onProgress: (p) => notify(`Encoding ${Math.round(p)}%`, 30 + Math.round(p * 0.55))
+      }
+    );
+
+    notify('Generating thumbnail...', 85);
+    let thumbRel = null;
+    try {
+      const thumbAbs = await generateThumbnail(destVideo, reelId);
+      const thumbDest = path.join(STORAGE_THUMBS, `${reelId}.jpg`);
+      if (fs.existsSync(thumbAbs)) fs.copyFileSync(thumbAbs, thumbDest);
+      thumbRel = `/storage/thumbnails/${reelId}.jpg`;
+    } catch (e) {
+      console.warn('[RenderService] Thumbnail generation failed:', e.message);
+    }
+
+    const shortToken = generateShortToken();
+    const campaignToken = generateCampaignToken();
+
+    return {
+      filePath: `/storage/reels/${reelId}.mp4`,
+      thumbnailPath: thumbRel,
+      caption: article.content ? `${article.content.substring(0, 150)}...\n\nFull Story In First Comment 👇` : '',
+      shortToken,
+      campaignToken,
+    };
+  }
+
   notify('Preparing assets...', 15);
 
   let processedMusicPath = null;

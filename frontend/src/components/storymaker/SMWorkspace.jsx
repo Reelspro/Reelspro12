@@ -47,6 +47,26 @@ export default function SMWorkspace({ setTab }) {
   const [colorPicker, setColorPicker] = useState(null); // { target: 'nameColor', val: '#fff' }
   const [exportOpen, setExportOpen] = useState(false);
   const [selectedArticleId, setSelectedArticleId] = useState(null);
+  
+  // --- State ---
+  const [preset, setPreset] = useState('purple');
+  const [profile, setProfile] = useState({
+    avatar: '', name: 'Reddit Stories', subtitle: '@reddit_tales',
+    font: 'Inter', size: 18, color: '#a78bfa', showBg: false
+  });
+  const [text, setText] = useState({
+    font: 'Inter', weight: 'Normal', align: 'Left',
+    size: 24, lineH: 1.4, letterS: 0, color: '#ffffff', highlight: '#7c3aed',
+    content: DEFAULT_STORY
+  });
+  const [bg, setBg] = useState({
+    type: 'Solid', color: '#0d0d18', color2: '#1a1a2e', media: '', mediaType: '',
+    radius: 20, padding: 24, alpha: 100, showProfile: true
+  });
+  const [footer, setFooter] = useState({
+    type: 'Fit to text', text: 'Continue Reading in Comments..',
+    color: '#ffffff', bgColor: '#1e1e2e', show: true
+  });
 
   const handleFetchRandomArticle = async () => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -78,26 +98,6 @@ export default function SMWorkspace({ setTab }) {
       toast.error('Connection error fetching article', { id: loadToast });
     }
   };
-
-  // --- State ---
-  const [preset, setPreset] = useState('purple');
-  const [profile, setProfile] = useState({
-    avatar: '', name: 'Reddit Stories', subtitle: '@reddit_tales',
-    font: 'Inter', size: 18, color: '#a78bfa', showBg: false
-  });
-  const [text, setText] = useState({
-    font: 'Inter', weight: 'Normal', align: 'Left',
-    size: 24, lineH: 1.4, letterS: 0, color: '#ffffff', highlight: '#7c3aed',
-    content: DEFAULT_STORY
-  });
-  const [bg, setBg] = useState({
-    type: 'Solid', color: '#0d0d18', color2: '#1a1a2e', media: '',
-    radius: 20, padding: 24, alpha: 100, showProfile: true
-  });
-  const [footer, setFooter] = useState({
-    type: 'Fit to text', text: 'Continue Reading in Comments..',
-    color: '#ffffff', bgColor: '#1e1e2e', show: true
-  });
 
   // Load draft on mount if available
   React.useEffect(() => {
@@ -196,7 +196,7 @@ export default function SMWorkspace({ setTab }) {
     if (target === 'avatar') {
       setProfile({ ...profile, avatar: url });
     } else if (target === 'media') {
-      setBg({ ...bg, media: url });
+      setBg({ ...bg, media: url, mediaType: file.type.startsWith('video/') ? 'video' : 'image' });
     }
   };
 
@@ -453,7 +453,7 @@ export default function SMWorkspace({ setTab }) {
           }}>
             {/* Background Media handling (Image vs Video) */}
             {bg.type === 'Media' && bg.media && (
-              bg.media.match(/\.(mp4|webm|mov)$/i) || bg.media.startsWith('blob:') && bg.media.length > 50 ? (
+              bg.mediaType === 'video' || bg.media.match(/\.(mp4|webm|mov)$/i) ? (
                 <video src={bg.media} autoPlay loop muted playsInline style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
               ) : (
                 <img src={bg.media} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />

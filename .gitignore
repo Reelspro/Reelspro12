@@ -69,6 +69,13 @@ verify_*.js
 approve_user.js
 gen_preview.js
 preview_frame.png
-test_ytdl_output.mp3
 backend/test-system.js
 backend/src/test*.js
+
+# ─── Release Packaging Binaries & Folders ────────────
+ReelsPro-Setup-*.exe
+ReelsPro-v*.zip
+ffmpeg.exe
+dist-release/
+assets/
+node_modules/

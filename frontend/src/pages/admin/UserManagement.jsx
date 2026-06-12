@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Search, Filter, ShieldAlert, MoreVertical, Trash2, Shield, Eye, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { Users, Search, Filter, ShieldAlert, MoreVertical, Trash2, Shield, Eye, CheckCircle, XCircle, Plus, Clock, UserCheck } from 'lucide-react';
 import useAdminStore from '../../store/adminStore';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -68,6 +68,32 @@ const UserManagement = () => {
         >
           <Plus size={20} /> Add User
         </button>
+      </div>
+
+      {/* Quick Status Filter Tabs */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+        {[
+          { label: 'All Users', value: '', icon: Users },
+          { label: 'Pending', value: 'pending', icon: Clock },
+          { label: 'Approved', value: 'approved', icon: UserCheck },
+          { label: 'Suspended', value: 'suspended', icon: XCircle },
+        ].map(tab => (
+          <button
+            key={tab.value}
+            onClick={() => { setStatusFilter(tab.value); setPage(1); }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
+              statusFilter === tab.value
+                ? tab.value === 'pending' ? 'bg-amber-500 text-black' :
+                  tab.value === 'approved' ? 'bg-green-600 text-white' :
+                  tab.value === 'suspended' ? 'bg-red-600 text-white' :
+                  'bg-blue-600 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white border border-gray-700'
+            }`}
+          >
+            <tab.icon size={14} />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Filters and Search */}

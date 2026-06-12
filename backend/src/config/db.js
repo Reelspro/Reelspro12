@@ -1,7 +1,9 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const dbPath = path.resolve(__dirname, '../../../reels_pro.db');
+const dbPath = process.pkg
+  ? path.join(path.dirname(process.execPath), 'reels_pro.db')
+  : path.resolve(__dirname, '../../../reels_pro.db');
 const db = new Database(dbPath, { verbose: console.log });
 
 // Enable foreign keys

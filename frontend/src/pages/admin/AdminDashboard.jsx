@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import useAdminStore from '../../store/adminStore';
 import useAnalyticsStore from '../../store/analyticsStore';
-import { Users, Globe, Key, Settings, Activity, Database, ShieldAlert, Video, BarChart3, FileText, Layers, Link2, Download } from 'lucide-react';
+import { Users, Globe, Key, Settings, Activity, Database, ShieldAlert, Video, BarChart3, FileText, Layers, Link2, Download, Clock, CheckCircle, XCircle, UserCheck } from 'lucide-react';
 
 const AdminStatCard = ({ icon: Icon, title, value, color }) => (
   <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl flex items-center gap-4">
@@ -29,13 +29,14 @@ const AdminModuleCard = ({ title, description, link, icon: Icon, color }) => (
 );
 
 const AdminDashboard = () => {
-  const { overview, fetchOverview, logs, fetchLogs } = useAdminStore();
+  const { overview, fetchOverview, logs, fetchLogs, pendingUsers, pendingCount, fetchPendingUsers, approvePendingUser, rejectPendingUser } = useAdminStore();
   const { feed } = useAnalyticsStore(); // Global feed because admin joined 'admin' socket room
 
   useEffect(() => {
     fetchOverview();
     fetchLogs();
-  }, [fetchOverview, fetchLogs]);
+    fetchPendingUsers();
+  }, [fetchOverview, fetchLogs, fetchPendingUsers]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -58,6 +59,66 @@ const AdminDashboard = () => {
           <AdminStatCard icon={Download} title="Downloads" value={overview.totals.downloads || 0} color="blue" />
           <AdminStatCard icon={Link2} title="Campaigns" value={overview.totals.campaigns || 0} color="orange" />
         </div>
+
+        {/* Pending Approvals Widget */}
+        {pendingCount > 0 && (
+          <div className="mb-8 bg-amber-950/30 border border-amber-500/25 rounded-2xl overflow-hidden shadow-xl">
+            <div className="flex items-center justify-between p-5 border-b border-amber-500/15">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+                  <Clock size={18} className="text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white flex items-center gap-2">
+                    Pending Approvals
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-black text-xs font-bold">{pendingCount}</span>
+                  </h3>
+                  <p className="text-xs text-amber-400/70">These users are waiting for your review</p>
+                </div>
+              </div>
+              <Link
+                to="/admin/users?status=pending"
+                className="text-xs text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-400/50 px-3 py-1.5 rounded-lg transition"
+              >
+                View all →
+              </Link>
+            </div>
+            <div className="divide-y divide-amber-500/10">
+              {pendingUsers.slice(0, 5).map(u => (
+                <div key={u.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-amber-500/5 transition">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center text-sm font-bold text-gray-300">
+                      {(u.name || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{u.name}</p>
+                      <p className="text-xs text-gray-400">{u.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 mr-2">
+                      {u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}
+                    </span>
+                    <button
+                      onClick={() => approvePendingUser(u.id)}
+                      title="Approve"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600/20 hover:bg-green-600/40 border border-green-500/30 hover:border-green-500/60 text-green-400 hover:text-green-300 text-xs font-medium transition"
+                    >
+                      <CheckCircle size={13} /> Approve
+                    </button>
+                    <button
+                      onClick={() => rejectPendingUser(u.id)}
+                      title="Reject"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/30 border border-red-500/20 hover:border-red-500/50 text-red-400 hover:text-red-300 text-xs font-medium transition"
+                    >
+                      <XCircle size={13} /> Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Management Modules Grid */}
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Database size={20} className="text-gray-400" /> System Modules</h2>

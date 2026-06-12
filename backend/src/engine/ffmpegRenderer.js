@@ -1,10 +1,19 @@
 const ffmpeg = require('fluent-ffmpeg');
-const ffmpegStatic = require('ffmpeg-static');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 
-ffmpeg.setFfmpegPath(ffmpegStatic);
+let ffmpegPath;
+if (process.pkg) {
+  ffmpegPath = path.join(path.dirname(process.execPath), 'ffmpeg.exe');
+  if (!fs.existsSync(ffmpegPath)) {
+    ffmpegPath = 'ffmpeg';
+  }
+} else {
+  ffmpegPath = require('ffmpeg-static');
+}
+
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 const OUTPUT_DIR = path.resolve(__dirname, '../../output/reels');
 const THUMB_DIR = path.resolve(__dirname, '../../output/thumbnails');

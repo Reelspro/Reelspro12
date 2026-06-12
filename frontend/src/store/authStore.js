@@ -4,8 +4,19 @@ import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+let initialUser = null;
+try {
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    initialUser = JSON.parse(storedUser);
+  }
+} catch (e) {
+  console.error('Failed to parse stored user:', e);
+  localStorage.removeItem('user');
+}
+
 const useAuthStore = create((set, get) => ({
-  user: JSON.parse(localStorage.getItem('user')) || null,
+  user: initialUser,
   token: localStorage.getItem('token') || null,
   isLoading: false,
 

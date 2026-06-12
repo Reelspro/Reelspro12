@@ -2,7 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const db = require('../config/db');
 
-const MUSIC_BASE = path.resolve(__dirname, '../../assets/music');
+const MUSIC_BASE = process.pkg
+  ? path.join(path.dirname(process.execPath), 'assets/music')
+  : path.resolve(__dirname, '../../assets/music');
 
 const EMOTION_KEYWORDS = {
   horror: ['murder', 'dead', 'kill', 'blood', 'death', 'body', 'ghost', 'haunted', 'terrifying'],

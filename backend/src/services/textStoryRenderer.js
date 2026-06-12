@@ -17,10 +17,17 @@ const execPromise = promisify(execCb);
 
 /* ─── FFmpeg path ──────────────────────────────────── */
 let ffmpegPath = process.env.FFMPEG_PATH || 'ffmpeg';
-try {
-  const st = require('ffmpeg-static');
-  if (st) ffmpegPath = st;
-} catch (_) {}
+if (process.pkg) {
+  const localFFmpeg = path.join(path.dirname(process.execPath), 'ffmpeg.exe');
+  if (fs.existsSync(localFFmpeg)) {
+    ffmpegPath = localFFmpeg;
+  }
+} else {
+  try {
+    const st = require('ffmpeg-static');
+    if (st) ffmpegPath = st;
+  } catch (_) {}
+}
 
 /* ─── Constants ────────────────────────────────────── */
 const W = 1080;
@@ -482,19 +489,75 @@ async function renderTextStoryReel(reelData, outputPath, options = {}) {
     await execPromise(`"${ffmpegPath}" -y -f concat -safe 0 -i "${listPath}" -c copy "${concatPath}"`);
     onProgress(80);
 
-    // Audio mixing
+    // Audio mixing with SFX support
+    const SFX_BASE = process.pkg
+      ? path.join(path.dirname(process.execPath), 'assets/sfx')
+      : path.resolve(__dirname, '../../assets/sfx');
+
     const hasMusic = musicPath && fs.existsSync(musicPath);
     const hasVoice = voiceoverPath && fs.existsSync(voiceoverPath);
 
-    let audioCmd;
-    if (hasMusic && hasVoice) {
-      audioCmd = `"${ffmpegPath}" -y -i "${concatPath}" -i "${musicPath}" -i "${voiceoverPath}" -filter_complex "[1:a]volume=0.55,afade=t=in:d=2,afade=t=out:st=${getTotalDuration(scenes) - 2}:d=2[bgm];[2:a]volume=1.6[voice];[bgm][voice]amix=inputs=2:duration=first[a_out]" -map 0:v -map "[a_out]" -c:v copy -c:a aac -b:a 128k -shortest "${outputPath}"`;
-    } else if (hasMusic) {
-      audioCmd = `"${ffmpegPath}" -y -i "${concatPath}" -i "${musicPath}" -filter_complex "[1:a]volume=0.65,afade=t=in:d=2,afade=t=out:st=${getTotalDuration(scenes) - 2}:d=2[a_out]" -map 0:v -map "[a_out]" -c:v copy -c:a aac -b:a 128k -shortest "${outputPath}"`;
-    } else if (hasVoice) {
-      audioCmd = `"${ffmpegPath}" -y -i "${concatPath}" -i "${voiceoverPath}" -filter_complex "[1:a]volume=1.5[a_out]" -map 0:v -map "[a_out]" -c:v copy -c:a aac -b:a 128k -shortest "${outputPath}"`;
+    // Collect valid SFX files
+    const selectedSfx = Array.isArray(reelData.sfx) ? reelData.sfx : [];
+    const validSfx = [];
+    selectedSfx.forEach(sfxName => {
+      const filename = sfxName.endsWith('.mp3') ? sfxName : `${sfxName}.mp3`;
+      const sfxFilePath = path.join(SFX_BASE, filename);
+      if (fs.existsSync(sfxFilePath)) {
+        validSfx.push({ name: sfxName, filePath: sfxFilePath });
+      }
+    });
+
+    let audioCmd = `"${ffmpegPath}" -y -i "${concatPath}"`;
+    const inputArgs = [];
+    const filterComplexParts = [];
+    const mixInputs = [];
+    let currentInputIdx = 1; // 0 is video (concatPath)
+
+    if (hasMusic) {
+      inputArgs.push(`-i "${musicPath}"`);
+      const musicIdx = currentInputIdx++;
+      filterComplexParts.push(`[${musicIdx}:a]volume=0.55,afade=t=in:d=2,afade=t=out:st=${getTotalDuration(scenes) - 2}:d=2[bgm]`);
+      mixInputs.push('[bgm]');
+    }
+
+    if (hasVoice) {
+      inputArgs.push(`-i "${voiceoverPath}"`);
+      const voiceIdx = currentInputIdx++;
+      filterComplexParts.push(`[${voiceIdx}:a]volume=1.5[voice]`);
+      mixInputs.push('[voice]');
+    }
+
+    // Add and delay SFX files
+    validSfx.forEach((sfxItem, idx) => {
+      inputArgs.push(`-i "${sfxItem.filePath}"`);
+      const sfxIdx = currentInputIdx++;
+      
+      // Delay timings:
+      // typing_sfx -> 0ms (starts immediately)
+      // page_whoosh -> 5000ms (at screen transition)
+      // violin_sting -> 5000ms (climax transition)
+      // crowd_gasp -> 2500ms (tension point)
+      // heartbeat_sfx -> 0ms (starts immediately)
+      let delayMs = 0;
+      if (sfxItem.name.includes('whoosh') || sfxItem.name.includes('sting')) {
+        delayMs = 5000;
+      } else if (sfxItem.name.includes('gasp')) {
+        delayMs = 2500;
+      }
+
+      filterComplexParts.push(`[${sfxIdx}:a]volume=0.9,adelay=${delayMs}|${delayMs}[sfx_${idx}]`);
+      mixInputs.push(`[sfx_${idx}]`);
+    });
+
+    if (mixInputs.length > 0) {
+      const filterStr = filterComplexParts.join(';');
+      const amixStr = `${mixInputs.join('')}amix=inputs=${mixInputs.length}:duration=first[a_out]`;
+      
+      audioCmd += ` ${inputArgs.join(' ')} -filter_complex "${filterStr}${filterStr ? ';' : ''}${amixStr}" -map 0:v -map "[a_out]" -c:v copy -c:a aac -b:a 128k -shortest "${outputPath}"`;
     } else {
-      audioCmd = `"${ffmpegPath}" -y -i "${concatPath}" -f lavfi -i anullsrc=r=44100:cl=stereo -c:v copy -c:a aac -b:a 128k -shortest "${outputPath}"`;
+      // No music, voice, or SFX -> output silent audio track
+      audioCmd += ` -f lavfi -i anullsrc=r=44100:cl=stereo -c:v copy -c:a aac -b:a 128k -shortest "${outputPath}"`;
     }
 
     await execPromise(audioCmd);

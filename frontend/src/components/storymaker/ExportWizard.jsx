@@ -384,30 +384,31 @@ function RenderModal({ duration, audio, onClose, storyMakerCustom, storyContent,
   const hasTriggered = useRef(false);
 
   useEffect(() => {
-    if (!hasTriggered.current) {
-      hasTriggered.current = true;
-      const voice = audio?.voiceEnabled ? audio.voice : 'none';
-      const musicId = audio?.musicEnabled ? audio.musicId : 'none';
-      const musicEnabled = audio?.musicEnabled ?? false;
-      
-      const customPayload = {
-        voice,
-        musicId,
-        musicEnabled,
-        ...(storyMakerCustom || {})
-      };
-      
-      generateReel('suspense', customPayload, duration, 'all', 'pixabay', null, storyContent, articleId);
-    }
+    if (hasTriggered.current) return;
+    hasTriggered.current = true;
+    const voice = audio?.voiceEnabled ? audio.voice : 'none';
+    const musicId = audio?.musicEnabled ? audio.musicId : 'none';
+    const musicEnabled = audio?.musicEnabled ?? false;
+    
+    const customPayload = {
+      voice,
+      musicId,
+      musicEnabled,
+      ...(storyMakerCustom || {})
+    };
+    
+    generateReel('suspense', customPayload, duration, 'all', 'pixabay', null, storyContent, articleId);
+  }, [generateReel, duration, audio, storyMakerCustom, storyContent, articleId]);
 
-    ref.current = setInterval(() => {
+  useEffect(() => {
+    const timer = setInterval(() => {
       setProgress(p => {
-        if (p >= 100) { clearInterval(ref.current); setDone(true); return 100; }
+        if (p >= 100) { clearInterval(timer); setDone(true); return 100; }
         return p + Math.random() * 8;
       });
     }, 300);
-    return () => clearInterval(ref.current);
-  }, [generateReel, duration, audio, storyMakerCustom, storyContent, articleId]);
+    return () => clearInterval(timer);
+  }, []);
 
   const pct = Math.min(100, Math.round(progress));
 

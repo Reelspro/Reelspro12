@@ -9,6 +9,7 @@ const {
   deleteReel,
   getRandomWebsiteArticle,
 } = require('../controllers/reelController');
+const textStoryCtrl = require('../controllers/textStoryController');
 const { protect, requireApproved } = require('../middleware/authMiddleware');
 
 const { generationLimiter } = require('../middleware/securityMiddleware');
@@ -37,6 +38,11 @@ router.get('/music', protect, (req, res) => {
     res.json([]);
   }
 });
+
+// Text Story Generator routes
+router.post('/text-story/generate', protect, requireApproved, generationLimiter, textStoryCtrl.generateTextStory);
+router.post('/text-story/preview', protect, requireApproved, textStoryCtrl.previewTextStory);
+router.get('/text-story/styles', protect, textStoryCtrl.getTextStoryStyles);
 
 router.get('/:id/status', protect, getReelStatus);
 router.get('/:id/download', protect, downloadReel);

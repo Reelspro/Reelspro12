@@ -1,10 +1,19 @@
+// Polyfill global File class for Node 18 compatibility in packaged environment
+if (typeof global.File === 'undefined') {
+  try {
+    global.File = require('buffer').File || class File {};
+  } catch (_) {
+    global.File = class File {};
+  }
+}
+
 const app = require('./app');
 const runMigrations = require('./database/migrations');
 const http = require('http');
 const { Server } = require('socket.io');
 const emitter = require('./socket/emitter');
 
-let PORT = process.env.PORT || 5000;
+let PORT = parseInt(process.env.PORT || '5000', 10);
 
 // Ensure DB schema is always up to date
 runMigrations();
@@ -81,8 +90,9 @@ const startServer = (port) => {
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.warn(`[Startup] Port ${port} is already in use. Trying port ${port + 1}...`);
-      startServer(port + 1);
+      const nextPort = parseInt(port, 10) + 1;
+      console.warn(`[Startup] Port ${port} is already in use. Trying port ${nextPort}...`);
+      startServer(nextPort);
     } else {
       console.error('[Startup] Server error:', err);
       process.exit(1);

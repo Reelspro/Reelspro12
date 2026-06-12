@@ -94,6 +94,9 @@ const Dashboard = () => {
             <Link to="/storymaker" className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition shadow-lg shadow-purple-500/20">
               <PlayCircle size={20} /> Story Maker
             </Link>
+            <Link to="/text-story" className="bg-pink-600 hover:bg-pink-700 px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition shadow-lg shadow-pink-500/20">
+              <FileText size={20} /> Text Story
+            </Link>
             <Link to="/settings" className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg flex items-center gap-2 transition">
               <Settings size={20} /> Settings
             </Link>
@@ -223,7 +226,11 @@ const Dashboard = () => {
                         <div className="flex gap-2 text-xs text-gray-500 mt-1">
                           <span>{click.platform}</span>
                           <span>•</span>
-                          <span>{formatDistanceToNow(new Date(click.created_at), { addSuffix: true })}</span>
+                          <span>
+                            {click.created_at && !isNaN(new Date(click.created_at).getTime())
+                              ? formatDistanceToNow(new Date(click.created_at), { addSuffix: true })
+                              : 'recently'}
+                          </span>
                         </div>
                       </div>
                     ))}

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useReelStore from '../store/reelStore';
 import { Download, Copy, PlayCircle, Loader2, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -9,6 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const STATIC_URL = API_URL.replace('/api', '/output');
 
 const ReelsGallery = () => {
+  const navigate = useNavigate();
   const { reels, fetchReels, generateReel, downloadReel, isLoading, isGenerating } = useReelStore();
 
   useEffect(() => {
@@ -42,20 +44,19 @@ const ReelsGallery = () => {
       <div className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Video className="text-purple-500" />
-            Generated Reels Gallery
+             <Video className="text-purple-500" />
+             Generated Reels Gallery
           </h1>
           <p className="text-gray-400 mt-2 text-sm">
             View your reel history, download MP4s, and copy viral captions.
           </p>
         </div>
         <button
-          onClick={() => generateReel('horror')}
-          disabled={isGenerating}
-          className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition disabled:opacity-50"
+          onClick={() => navigate('/studio')}
+          className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition"
         >
-          {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <PlayCircle size={20} />}
-          {isGenerating ? 'Queuing...' : 'Generate New Reel'}
+          <PlayCircle size={20} />
+          Generate New Reel
         </button>
       </div>
 
@@ -98,7 +99,7 @@ const ReelsGallery = () => {
                 ) : (
                   <div className="text-center flex flex-col items-center p-4">
                     <Loader2 className="animate-spin text-purple-500 mb-3" size={32} />
-                    <p className="text-purple-400 font-medium capitalize">{reel.status}...</p>
+                    <p className="text-purple-400 font-medium capitalize">{(reel.status || 'processing')}...</p>
                   </div>
                 )}
                 
@@ -107,7 +108,7 @@ const ReelsGallery = () => {
                     reel.status === 'completed' ? 'bg-green-600' :
                     reel.status === 'failed' ? 'bg-red-600' : 'bg-yellow-600 text-black'
                   }`}>
-                    {reel.status.toUpperCase()}
+                    {(reel.status || 'processing').toUpperCase()}
                   </span>
                 </div>
               </div>

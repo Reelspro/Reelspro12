@@ -30,6 +30,7 @@ const QueueMonitor = lazy(() => import('./pages/admin/QueueMonitor'));
 const UrlShortener = lazy(() => import('./pages/UrlShortener'));
 const StoryMaker = lazy(() => import('./pages/StoryMaker'));
 const ReelGenerator = lazy(() => import('./pages/ReelGenerator'));
+const TextStoryGenerator = lazy(() => import('./pages/TextStoryGenerator'));
 
 // Loading Fallback
 const LoadingScreen = () => (
@@ -62,6 +63,7 @@ function App() {
             <Route path="/shortener" element={<UrlShortener />} />
             <Route path="/storymaker" element={<StoryMaker />} />
             <Route path="/reel-generator" element={<ReelGenerator />} />
+            <Route path="/text-story" element={<TextStoryGenerator />} />
           </Route>
 
           {/* Admin Protected Routes */}

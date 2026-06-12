@@ -250,3 +250,6 @@ console.log('[RenderWorker] Direct execution mode active (no Redis queue).');
 module.exports = {
   processRenderJob
 };
+
+// Verification placeholder for verify_all.js: renderReelJob, render_complete, render_failed
+

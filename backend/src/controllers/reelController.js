@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const dbHelper = require('../services/dbHelper');
 const { getRandomArticle } = require('../services/articleService');
+const { scrapeSourceUrl } = require('../services/scraper_service');
 const { logActivity } = require('../services/activityLogService');
 const { generateSuspenseScenes, saveReelScript, buildTextSegments, pickTextStoryStyle } = require('../services/reel_script_service');
 
@@ -78,8 +79,9 @@ const generateReel = async (req, res) => {
     } else if (storyContent) {
       const cleanTitle = storyContent.substring(0, 60) + '...';
       const cleanUrl = 'custom-' + req.user.id + '-' + Date.now();
+      let insertResult;
       try {
-        db.prepare(`
+        insertResult = db.prepare(`
           INSERT INTO articles (title, url, content, source_category, usage_count)
           VALUES (?, ?, ?, 'custom', 1)
         `).run(cleanTitle, cleanUrl, storyContent);
@@ -88,7 +90,8 @@ const generateReel = async (req, res) => {
       }
       article = db.prepare('SELECT * FROM articles WHERE url = ?').get(cleanUrl);
       if (!article) {
-        article = { id: 1, title: cleanTitle, url: cleanUrl, content: storyContent };
+        const lastId = insertResult ? insertResult.lastInsertRowid : 1;
+        article = { id: lastId, title: cleanTitle, url: cleanUrl, content: storyContent };
       }
       
       const scenes2 = splitStoryIntoScenes(storyContent, finalDuration);
@@ -110,6 +113,9 @@ const generateReel = async (req, res) => {
 
     } else {
       article = await getRandomArticle(req.user.id, category);
+      if (!article) {
+        return res.status(404).json({ error: 'No articles found in the database. Please try scraping some websites first.' });
+      }
       emotion = musicEngine.detectEmotion(article.title, article.content || '');
       script = await generateSuspenseScenes(
         article.title,

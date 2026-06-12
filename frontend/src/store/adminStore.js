@@ -20,6 +20,8 @@ const useAdminStore = create((set, get) => ({
   queueStats: [],
   logs: [],
   usersData: { users: [], total: 0, page: 1, pages: 1 },
+  pendingUsers: [],
+  pendingCount: 0,
   currentUserDetail: null,
   systemSettings: {
     daily_reel_limit: 50,
@@ -100,6 +102,52 @@ const useAdminStore = create((set, get) => ({
       set({ logs: response.data });
     } catch (error) {
       console.error('Failed to fetch logs:', error);
+    }
+  },
+
+  fetchPendingUsers: async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/admin/users?status=pending&limit=50`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const users = response.data?.users || [];
+      set({ pendingUsers: users, pendingCount: users.length });
+    } catch (error) {
+      console.error('Failed to fetch pending users:', error);
+    }
+  },
+
+  approvePendingUser: async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/admin/users/${id}/status`, { status: 'approved' }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('User approved successfully!');
+      // Refresh pending list
+      get().fetchPendingUsers();
+      get().fetchOverview();
+      return true;
+    } catch (error) {
+      toast.error('Failed to approve user');
+      return false;
+    }
+  },
+
+  rejectPendingUser: async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/admin/users/${id}/status`, { status: 'rejected' }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('User rejected.');
+      get().fetchPendingUsers();
+      get().fetchOverview();
+      return true;
+    } catch (error) {
+      toast.error('Failed to reject user');
+      return false;
     }
   },
 
