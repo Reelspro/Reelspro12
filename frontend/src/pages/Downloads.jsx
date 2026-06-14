@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   Download, Share2, Calendar, Video, PlayCircle, Clock, 
-  Trash2, AlertCircle, Copy, Link2, ExternalLink, CalendarDays, X
+  Trash2, AlertCircle, Copy, Link2, ExternalLink, CalendarDays, X, Sparkles, Play
 } from 'lucide-react';
 import useReelStore from '../store/reelStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,7 @@ export default function Downloads() {
   // Date range filters
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'text_story' | 'video'
   
   // Active playing video modal / preview
   const [previewVideoUrl, setPreviewVideoUrl] = useState(null);
@@ -28,16 +29,16 @@ export default function Downloads() {
 
   // Extract thumbnail URL safely
   const getThumbnailUrl = (reel) => {
-    if (reel.thumbnail_path) {
+    if (reel && reel.thumbnail_path) {
       const path = reel.thumbnail_path.startsWith('/') ? reel.thumbnail_path : `/${reel.thumbnail_path}`;
       return `${BASE_URL}${path}`;
     }
-    return reel.article_image || null;
+    return (reel && reel.article_image) || null;
   };
 
   // Safe helper to calculate reel duration from scenes_json
   const getReelDuration = (reel) => {
-    if (reel.scenes_json) {
+    if (reel && reel.scenes_json) {
       try {
         const scenes = typeof reel.scenes_json === 'string' 
           ? JSON.parse(reel.scenes_json) 
@@ -55,24 +56,31 @@ export default function Downloads() {
 
   // Handle share (copy link to clipboard)
   const handleShare = (reel) => {
+    if (!reel) return;
     const shareUrl = reel.full_short_url || `${window.location.origin}/r/${reel.short_url}`;
-    if (navigator.share) {
-      navigator.share({
-        title: reel.article_title || 'Generated Reel',
-        text: reel.caption || 'Check out my new generated reel!',
-        url: shareUrl,
-      }).catch((err) => {
-        // Fallback to clipboard if share cancelled
+    try {
+      if (navigator.share) {
+        navigator.share({
+          title: reel.article_title || 'Generated Reel',
+          text: reel.caption || 'Check out my new generated reel!',
+          url: shareUrl,
+        }).catch((err) => {
+          // Fallback to clipboard if share cancelled
+          copyToClipboard(shareUrl);
+        });
+      } else {
         copyToClipboard(shareUrl);
-      });
-    } else {
+      }
+    } catch (e) {
       copyToClipboard(shareUrl);
     }
   };
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    toast.success('Link copied to clipboard! 🔗');
+    if (text) {
+      navigator.clipboard.writeText(text);
+      toast.success('Link copied to clipboard! 🔗');
+    }
   };
 
   // Filter reels by date range locally
@@ -80,27 +88,28 @@ export default function Downloads() {
     if (!reels) return [];
     
     // Sort completed reels just in case
-    const completedOnly = reels.filter(r => r.status === 'completed');
+    const completedOnly = reels.filter(r => r && r.status === 'completed');
 
     return completedOnly.filter(reel => {
+      if (!reel) return false;
+      // Type filter
+      if (typeFilter === 'text_story' && reel.bg_type !== 'text_story') return false;
+      if (typeFilter === 'video' && reel.bg_type === 'text_story') return false;
       if (!reel.created_at) return true;
       const reelDate = new Date(reel.created_at);
-      
       if (startDate) {
         const start = new Date(startDate);
         start.setHours(0, 0, 0, 0);
         if (reelDate < start) return false;
       }
-      
       if (endDate) {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
         if (reelDate > end) return false;
       }
-      
       return true;
     });
-  }, [reels, startDate, endDate]);
+  }, [reels, startDate, endDate, typeFilter]);
 
   const clearDateFilters = () => {
     setStartDate('');
@@ -132,7 +141,7 @@ export default function Downloads() {
             to="/reel-generator"
             className="bg-blue-650 hover:bg-blue-600 flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition shadow-lg shadow-blue-500/10"
           >
-            <SparklesIcon />
+            <Sparkles size={16} />
             Generator
           </Link>
           <Link
@@ -179,6 +188,27 @@ export default function Downloads() {
         <div className="text-xs text-gray-500">
           Showing <span className="text-purple-400 font-bold">{filteredReels.length}</span> completed reels
         </div>
+      </div>
+
+      {/* Type Filter Tabs */}
+      <div className="flex gap-3 mb-6">
+        {[
+          { id: 'all', label: '🎬 All Reels' },
+          { id: 'text_story', label: '📝 Text Stories' },
+          { id: 'video', label: '🎥 Video Reels' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setTypeFilter(tab.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+              typeFilter === tab.id
+                ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-500/20'
+                : 'bg-gray-800/40 border-gray-700 text-gray-400 hover:border-gray-600'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* SKELETON LOADER STATE */}
@@ -237,12 +267,13 @@ export default function Downloads() {
       ) : (
         /* REELS GALLERY GRID */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredReels.map((reel) => {
+          {filteredReels.map((reel, idx) => {
+            if (!reel) return null;
             const thumb = getThumbnailUrl(reel);
             const duration = getReelDuration(reel);
             return (
               <motion.div
-                key={reel.id}
+                key={reel.id || idx}
                 layout
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -263,9 +294,16 @@ export default function Downloads() {
                   )}
                   
                   {/* Floating badges */}
-                  <div className="absolute top-3 left-3 bg-black/60 border border-gray-850 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1 backdrop-blur">
-                    <Clock size={12} className="text-purple-400" />
-                    <span>{duration}s</span>
+                  <div className="absolute top-3 left-3 flex gap-1.5">
+                    <div className="bg-black/60 border border-gray-850 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1 backdrop-blur">
+                      <Clock size={12} className="text-purple-400" />
+                      <span>{duration}s</span>
+                    </div>
+                    {reel.bg_type === 'text_story' && (
+                      <div className="bg-pink-600/80 border border-pink-500 text-xs px-2.5 py-1 rounded-full font-bold text-white backdrop-blur">
+                        📝 Text Story
+                      </div>
+                    )}
                   </div>
 
                   {/* Play video overlay trigger */}
@@ -371,24 +409,3 @@ export default function Downloads() {
   );
 }
 
-// Inline helper icon components to avoid missing imports
-function SparklesIcon() {
-  return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="16" 
-      height="16" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className="lucide lucide-sparkles"
-    >
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-      <path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5 5 3Z" />
-      <path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5Z" />
-    </svg>
-  );
-}

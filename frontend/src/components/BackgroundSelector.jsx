@@ -6,12 +6,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const BG_OPTIONS = [
   {
-    id: 'pixabay',
-    label: 'Auto (Pixabay)',
-    icon: '🔍',
-    desc: 'Automatically finds relevant images from Pixabay'
-  },
-  {
     id: 'custom',
     label: 'My Image',
     icon: '🖼️',
@@ -26,7 +20,7 @@ const BG_OPTIONS = [
 ];
 
 export default function BackgroundSelector({ value, onChange }) {
-  const [bgType, setBgType] = useState(value?.bgType || 'pixabay');
+  const [bgType, setBgType] = useState(value?.bgType || 'none');
   const [customImageUrl, setCustomImageUrl] = useState(value?.customImagePath || null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -60,14 +54,15 @@ export default function BackgroundSelector({ value, onChange }) {
           Authorization: `Bearer ${token}`
         }
       });
-      setCustomImageUrl(res.data.imageUrl);
-      onChange({ bgType: 'custom', customImagePath: res.data.imageUrl });
+      setCustomImageUrl(res.data.filePath);
+      onChange({ bgType: 'custom', customImagePath: res.data.filePath });
       toast.success('Background image uploaded!');
-    } catch (e) {
-      toast.error('Upload failed: ' + (e.response?.data?.error || e.message));
-      setPreview(null);
+    } catch (err) {
+      console.error(err);
+      toast.error('Upload failed');
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   const handleRemove = async () => {
@@ -86,67 +81,77 @@ export default function BackgroundSelector({ value, onChange }) {
   };
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm font-medium text-gray-300">Background</p>
-
-      {/* 3 option cards */}
-      <div className="grid grid-cols-3 gap-2">
-        {BG_OPTIONS.map(opt => (
-          <button
-            key={opt.id}
-            type="button"
-            onClick={() => handleTypeChange(opt.id)}
-            className={`p-3 rounded-xl border text-center transition-all ${
-              bgType === opt.id
-                ? 'border-purple-500 bg-purple-500/20 text-white'
-                : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-500'
-            }`}
-          >
-            <div className="text-2xl mb-1">{opt.icon}</div>
-            <div className="text-xs font-medium">{opt.label}</div>
-          </button>
-        ))}
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {BG_OPTIONS.map((opt) => {
+          const isSelected = bgType === opt.id;
+          return (
+            <div
+              key={opt.id}
+              onClick={() => handleTypeChange(opt.id)}
+              className={`border rounded-xl p-4 cursor-pointer transition-all ${
+                isSelected
+                  ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/5'
+                  : 'border-gray-800 bg-gray-900/50 hover:border-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{opt.icon}</span>
+                <div>
+                  <h4 className={`font-semibold text-sm ${isSelected ? 'text-purple-400' : 'text-gray-200'}`}>
+                    {opt.label}
+                  </h4>
+                  <p className="text-xs text-gray-500 mt-1">{opt.desc}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Description */}
-      <p className="text-xs text-gray-500">
-        {BG_OPTIONS.find(o => o.id === bgType)?.desc}
-      </p>
-
-      {/* Custom upload area */}
       {bgType === 'custom' && (
-        <div className="mt-2">
+        <div className="border border-gray-800 rounded-xl p-4 bg-gray-950/50 space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Custom Background Image
+            </span>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1"
+            >
+              {uploading ? 'Uploading...' : '📁 Select File'}
+            </button>
+          </div>
+
           {preview || customImageUrl ? (
-            <div className="relative">
+            <div className="relative aspect-[9/16] w-32 mx-auto rounded-lg overflow-hidden border border-gray-800">
               <img
-                src={preview || customImageUrl}
-                alt="Background preview"
-                className="w-full h-40 object-cover rounded-xl border border-gray-600"
+                src={preview || `${API_URL.replace('/api', '')}${customImageUrl}`}
+                alt="Background Preview"
+                className="w-full h-full object-cover"
               />
               <button
+                type="button"
                 onClick={handleRemove}
-                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm"
+                className="absolute top-1 right-1 bg-black/70 hover:bg-black/90 text-white rounded-full p-1 transition-colors"
+                title="Remove image"
               >
                 ✕
               </button>
-              <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                ✅ Background set
-              </div>
             </div>
           ) : (
             <div
               onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-500/5 transition-all"
+              className="border-2 border-dashed border-gray-800 hover:border-gray-700 rounded-lg aspect-[9/16] w-32 mx-auto flex flex-col items-center justify-center cursor-pointer transition-colors p-4"
             >
               {uploading ? (
-                <div className="text-purple-400">
-                  <div className="animate-spin text-2xl mb-2">⏳</div>
-                  <p className="text-sm">Uploading...</p>
-                </div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-500" />
               ) : (
                 <>
-                  <div className="text-3xl mb-2">📁</div>
-                  <p className="text-sm text-gray-400">Click to upload image</p>
+                  <span className="text-xl mb-1">📤</span>
+                  <p className="text-[10px] text-center text-gray-500 font-medium">Click to upload</p>
                   <p className="text-xs text-gray-600 mt-1">JPG, PNG, WEBP — max 10MB</p>
                   <p className="text-xs text-gray-600">Best size: 1080×1920 (9:16 vertical)</p>
                 </>
@@ -160,15 +165,6 @@ export default function BackgroundSelector({ value, onChange }) {
             className="hidden"
             onChange={handleUpload}
           />
-        </div>
-      )}
-
-      {/* Pixabay tip */}
-      {bgType === 'pixabay' && (
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-          <p className="text-xs text-blue-400">
-            💡 Pixabay will automatically search for images matching your article keywords
-          </p>
         </div>
       )}
 

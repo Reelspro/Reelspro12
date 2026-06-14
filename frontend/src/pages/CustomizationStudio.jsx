@@ -37,7 +37,7 @@ const CustomizationStudio = () => {
   const [duration, setDuration] = useState(10);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [renderingEngine, setRenderingEngine] = useState('remotion');
-  const [bgSettings, setBgSettings] = useState({ bgType: 'pixabay', customImagePath: null });
+  const [bgSettings, setBgSettings] = useState({ bgType: 'none', customImagePath: null });
 
   React.useEffect(() => {
     fetchSources();

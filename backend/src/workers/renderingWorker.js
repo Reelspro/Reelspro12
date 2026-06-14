@@ -30,7 +30,10 @@ async function processRenderJob(job) {
     theme = 'suspense',
     duration = 30,
     caption,
-    shortUrl
+    shortUrl,
+    bgType,
+    customImagePath,
+    themeData
   } = job.data;
 
   console.log(`[RenderWorker] Processing job ${job.id} for reel ${reelId}...`);
@@ -57,126 +60,44 @@ async function processRenderJob(job) {
     // Legacy support emits
     emitter.emitToUser(userId, 'reel_progress', { reelId, userId, progress: 0, status: 'processing', step: 'Initializing render...' });
 
-    // Step 2: reel_script_service se script lo
-    let script = null;
-    
-    // Check if scenesJson is provided directly in job
-    if (scenesJson) {
-      const parsedScenes = typeof scenesJson === 'string' ? JSON.parse(scenesJson) : scenesJson;
-      script = {
-        scenes: parsedScenes,
-        caption: caption || `${theme} story...`,
-        hashtags: [],
-        cta: '📖 Full Read Story Details In Comments 👇'
-      };
-    }
-
-    // Try reading from database
-    if (!script) {
-      try {
-        const scriptRow = db.prepare('SELECT * FROM reel_scripts WHERE reel_id = ?').get(reelId);
-        if (scriptRow) {
-          script = {
-            scenes: JSON.parse(scriptRow.scenes_json),
-            caption: scriptRow.caption,
-            hashtags: JSON.parse(scriptRow.hashtags || '[]'),
-            cta: scriptRow.cta_text
-          };
-        }
-      } catch (e) {
-        console.warn('[RenderWorker] Failed to query pre-existing script:', e.message);
-      }
-    }
-
-    // Fallback: Generate script if not found
-    if (!script) {
-      const article = db.prepare('SELECT * FROM articles WHERE id = ?').get(articleId);
-      if (!article) {
-        throw new Error(`Article not found for id: ${articleId}`);
-      }
-      if (theme === 'suspense') {
-        script = await reelScriptService.generateSuspenseScenes(
-          article.title,
-          article.content || article.title,
-          theme,
-          userId,
-          duration
-        );
-      } else {
-        script = await reelScriptService.generateReelScript(article, {
-          target_duration: duration,
-          theme
-        });
-      }
-    }
-
-    // Step 3: music_engine se music select karo
-    let selectedMusicPath = musicPath || null;
-    if (!selectedMusicPath || !fs.existsSync(selectedMusicPath)) {
-      const matchedMusic = await musicEngine.selectMusicForReel({ theme });
-      if (matchedMusic && matchedMusic.file_path) {
-        selectedMusicPath = matchedMusic.file_path;
-      }
-    }
-
-    // Step 4: Render Facebook-style Text Story reel
-    const outputPath = path.resolve(__dirname, '../../storage/reels', `${reelId}.mp4`);
-    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-
-    // Build the full reelData object with textStoryRenderer fields
-    const reelData = {
-      scenes: script.scenes,
-      textSegments: script.textSegments || null,
-      backgroundColor: script.backgroundColor || null,
-      patternId: script.patternId || null,
-      accentColor: script.accentColor || null,
-      username: script.username || 'Story User',
-      footerText: script.footerText || 'Full Story In First Comment \uD83D\uDC47',
-    };
-
-    await renderTextStoryReel(reelData, outputPath, {
-      musicPath: selectedMusicPath,
-      voiceoverPath: voiceoverPath || null,
-      onProgress: (percent) => {
+    // Step 2: renderReelJob se render karo (handles both text_story and slideshow/regular reels)
+    const { renderReelJob } = require('../services/render_service');
+    const renderResult = await renderReelJob({
+      reelId,
+      userId,
+      articleId,
+      scenesJson,
+      musicPath,
+      theme,
+      themeData: themeData || { name: theme },
+      bgType: bgType || (theme === 'text_story' ? 'text_story' : 'none'),
+      customImagePath,
+      onProgress: (pData) => {
+        const percent = Math.round(pData.percent || 0);
         // Update DB progress
         db.prepare(`UPDATE render_jobs SET progress = ? WHERE reel_id = ?`).run(percent, reelId);
         db.prepare(`UPDATE reels SET render_progress = ? WHERE id = ?`).run(percent, reelId);
 
         // Emit Socket.IO progress
-        const progData = { reelId, progress: percent, status: 'processing' };
+        const progData = { reelId, progress: percent, status: 'processing', step: pData.step };
         emitter.emitToUser(userId, 'render:progress', progData);
         emitter.emitToAdmin('render:progress', progData);
-        emitter.emitToUser(userId, 'reel_progress', { reelId, userId, progress: percent, status: 'processing' });
+        emitter.emitToUser(userId, 'reel_progress', { reelId, userId, progress: percent, status: 'processing', step: pData.step });
 
         job.updateProgress(percent).catch(() => {});
       }
     });
 
+    const relativeFilePath = renderResult.filePath;
+    const relativeThumbnailPath = renderResult.thumbnailPath;
+    const finalCaption = renderResult.caption || caption || '';
 
-    // Generate Thumbnail
-    let relativeThumbnailPath = null;
-    try {
-      const { generateThumbnail } = require('../engine/ffmpegRenderer');
-      const absoluteThumbnailPath = await generateThumbnail(outputPath, reelId);
-      if (fs.existsSync(absoluteThumbnailPath)) {
-        relativeThumbnailPath = `/storage/thumbnails/${reelId}.jpg`;
-        const destThumb = path.resolve(__dirname, '../../storage/thumbnails', `${reelId}.jpg`);
-        fs.mkdirSync(path.dirname(destThumb), { recursive: true });
-        fs.copyFileSync(absoluteThumbnailPath, destThumb);
-      }
-    } catch (e) {
-      console.warn('[RenderWorker] Failed to generate thumbnail:', e.message);
-    }
-
-    // Step 5: Output path render_jobs aur reels table mein save karo
-    // Step 6: Status completed karo
-    const relativeFilePath = `/storage/reels/${reelId}.mp4`;
-    
+    // Step 3: Output path render_jobs aur reels table mein save karo
     db.prepare(`
       UPDATE reels 
       SET status = 'completed', file_path = ?, thumbnail_path = ?, caption = COALESCE(?, caption), render_progress = 100
       WHERE id = ?
-    `).run(relativeFilePath, relativeThumbnailPath, script.caption || null, reelId);
+    `).run(relativeFilePath, relativeThumbnailPath, finalCaption, reelId);
 
     db.prepare(`
       UPDATE render_jobs 
@@ -188,13 +109,13 @@ async function processRenderJob(job) {
     db.prepare(`UPDATE users SET reels_generated = reels_generated + 1, last_activity = CURRENT_TIMESTAMP WHERE id = ?`)
       .run(userId);
 
-    // Step 7: Socket.IO emit: render:progress aur render:complete events
+    // Step 4: Socket.IO emit: render:progress aur render:complete events
     const completePayload = {
       reelId,
       status: 'completed',
       outputPath: relativeFilePath,
       thumbnailPath: relativeThumbnailPath,
-      caption: script.caption
+      caption: finalCaption
     };
     emitter.emitToUser(userId, 'render:complete', completePayload);
     emitter.emitToAdmin('render:complete', completePayload);
@@ -206,7 +127,7 @@ async function processRenderJob(job) {
       progress: 100,
       downloadUrl: relativeFilePath,
       thumbnailUrl: relativeThumbnailPath,
-      caption: script.caption
+      caption: finalCaption
     });
 
     // Set job final progress

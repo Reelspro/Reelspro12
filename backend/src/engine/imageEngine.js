@@ -98,8 +98,8 @@ function cleanupSceneImages(reelId, count) {
 }
 
 async function getBackgroundImages(options, scenes, reelId) {
-  // options = { bgType: 'pixabay'|'custom'|'none', customImagePath: null|'/storage/uploads/...' }
-  const { bgType = 'pixabay', customImagePath = null } = options || {};
+  // options = { bgType: 'custom'|'none', customImagePath: null|'/storage/uploads/...' }
+  const { bgType = 'none', customImagePath = null } = options || {};
 
   if (bgType === 'none') {
     console.log('[ImageEngine] No background — using theme color only');
@@ -112,12 +112,12 @@ async function getBackgroundImages(options, scenes, reelId) {
       console.log('[ImageEngine] Using custom background:', fullPath);
       return new Array(scenes.length).fill(fullPath);
     } else {
-      console.warn('[ImageEngine] Custom image not found, falling back to pixabay');
+      console.warn('[ImageEngine] Custom image not found, falling back to none');
     }
   }
 
-  // Default: Pixabay auto search
-  return await fetchSceneImages(null, scenes, reelId);
+  // Default: Theme color (none)
+  return new Array(scenes.length).fill(null);
 }
 
 module.exports = { fetchSceneImages, cleanupSceneImages, downloadImage, getBackgroundImages };

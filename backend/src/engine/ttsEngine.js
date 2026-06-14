@@ -68,22 +68,39 @@ const generateVoiceover = async (texts, reelId, voiceName = 'Jenny') => {
     </speak>`;
     
     let audioStream;
+    let trySsml = true;
     try {
       // Try SSML first for emotional delivery
-      const result = tts.toStream(ssml);
+      const result = await tts.toStream(ssml);
       audioStream = result.audioStream;
     } catch (_) {
-      // Fallback to plain text if SSML fails
-      const result = tts.toStream(narration);
-      audioStream = result.audioStream;
+      trySsml = false;
     }
-    
-    await new Promise((resolve, reject) => {
-      const writer = fs.createWriteStream(outputPath);
-      audioStream.pipe(writer);
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
+
+    if (trySsml && audioStream) {
+      await new Promise((resolve, reject) => {
+        const writer = fs.createWriteStream(outputPath);
+        audioStream.pipe(writer);
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+        audioStream.on('error', reject);
+      });
+    }
+
+    // Check if the SSML output is valid, otherwise fallback to plain text
+    if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size < 100) {
+      console.log('[TTS] SSML silent failure or too small, retrying with plain text...');
+      const result = await tts.toStream(narration);
+      audioStream = result.audioStream;
+
+      await new Promise((resolve, reject) => {
+        const writer = fs.createWriteStream(outputPath);
+        audioStream.pipe(writer);
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+        audioStream.on('error', reject);
+      });
+    }
 
     if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size < 100) {
       console.warn('[TTS] Output file missing or too small, skipping voiceover.');

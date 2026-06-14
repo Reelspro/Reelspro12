@@ -40,8 +40,7 @@ export default function AdminLiveClicks() {
           <thead className="bg-gray-700/50 text-gray-300">
             <tr>
               <th className="px-6 py-3">User</th>
-              <th className="px-6 py-3">Reel</th>
-              <th className="px-6 py-3">Category</th>
+              <th className="px-6 py-3">Content</th>
               <th className="px-6 py-3">Platform</th>
               <th className="px-6 py-3">Location</th>
               <th className="px-6 py-3">Device</th>
@@ -60,16 +59,25 @@ export default function AdminLiveClicks() {
                     <p className="text-white font-medium">{click.user_name || 'Unknown'}</p>
                     <p className="text-xs text-gray-500">{click.user_email}</p>
                   </td>
-                  <td className="px-6 py-4 max-w-xs truncate text-white" title={click.article_title}>
-                    {click.article_title}
+                  <td className="px-6 py-4">
+                    <div className="max-w-xs truncate text-white font-medium" title={click.article_title}>
+                      {click.article_title}
+                    </div>
+                    <div className="text-xs text-gray-500 capitalize">{click.source_category || '-'}</div>
                   </td>
-                  <td className="px-6 py-4 capitalize">{click.source_category || '-'}</td>
-                  <td className="px-6 py-4">{click.platform}</td>
-                  <td className="px-6 py-4 flex items-center gap-1">
-                    <Globe size={14} /> {click.country}
+                  <td className="px-6 py-4 text-blue-400 text-xs font-semibold">{click.platform}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1 text-white">
+                      <Globe size={14} className="text-orange-400" /> 
+                      {click.country} {click.city && click.city !== 'Unknown' ? `(${click.city})` : ''}
+                    </div>
+                    <div className="text-xs text-gray-500 font-mono mt-0.5">IP: {click.ip_address || 'Unknown'}</div>
                   </td>
-                  <td className="px-6 py-4 flex items-center gap-1">
-                    <Smartphone size={14} /> {click.device}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1 text-white">
+                      <Smartphone size={14} className="text-green-400" /> {click.device}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">{click.os} • {click.browser}</div>
                   </td>
                   <td className="px-6 py-4 text-right text-xs">
                     {formatDistanceToNow(new Date(click.created_at), { addSuffix: true })}

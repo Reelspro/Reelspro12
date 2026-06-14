@@ -11,11 +11,11 @@ import useTextStoryStore from '../store/textStoryStore';
 export default function TextStoryGenerator() {
   const navigate = useNavigate();
   const {
-    storyText, username, avatarUrl,
+    storyText, username, avatarUrl, voice,
     background, accentColor, animationStyle, musicTrack, sfx,
     availableStyles, screens, isLoading, isGenerating,
     setStoryText, setUsername, setAvatarUrl,
-    setBackground, setAccentColor, setAnimation, setMusic, setSfx,
+    setBackground, setAccentColor, setAnimation, setMusic, setSfx, setVoice,
     randomizeAll, fetchStyles, previewStory, generateStory
   } = useTextStoryStore();
 
@@ -300,7 +300,7 @@ export default function TextStoryGenerator() {
                 <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
                   Accent Highlights
                 </label>
-                <div className="flex gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                   {availableStyles.accentColors.map((color) => {
                     const isSelected = accentColor?.name === color.name;
                     return (
@@ -311,8 +311,8 @@ export default function TextStoryGenerator() {
                           isSelected ? 'bg-gray-800 border-purple-500 text-white' : 'bg-[#181829] border-gray-800 text-gray-400 hover:border-gray-750'
                         }`}
                       >
-                        <span className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: color.hex }} />
-                        <span className="text-xs font-semibold">{color.name}</span>
+                        <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: color.hex }} />
+                        <span className="text-xs font-semibold truncate">{color.name}</span>
                       </div>
                     );
                   })}
@@ -335,7 +335,7 @@ export default function TextStoryGenerator() {
                           isSelected ? 'bg-purple-600/15 border-purple-500 text-purple-200' : 'bg-[#181829] border-gray-800 text-gray-400 hover:border-gray-750'
                         }`}
                       >
-                        <div className="text-xs font-bold capitalize">{anim.name.replace('_', ' ')}</div>
+                        <div className="text-xs font-bold capitalize">{typeof anim.name === 'string' ? anim.name.replace('_', ' ') : ''}</div>
                       </div>
                     );
                   })}
@@ -400,11 +400,41 @@ export default function TextStoryGenerator() {
                           isSelected ? 'bg-pink-600/15 border-pink-500 text-pink-300 font-bold' : 'bg-[#181829] border-gray-800 text-gray-500 hover:border-gray-750'
                         }`}
                       >
-                        🔔 {sfxOpt.name.replace('_sfx', '').replace('_', ' ')}
+                        🔔 {typeof sfxOpt.name === 'string' ? sfxOpt.name.replace('_sfx', '').replace('_', ' ') : 'sfx'}
                       </div>
                     );
                   })}
                 </div>
+              </div>
+            </div>
+
+            {/* Voice Narration Selector */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                🎙️ Voice Narration
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {[
+                  { id: 'Jenny', name: 'Jenny', info: 'US Female · Emotional' },
+                  { id: 'Aria', name: 'Aria', info: 'US Female · Warm' },
+                  { id: 'Guy', name: 'Guy', info: 'US Male · Deep' },
+                  { id: 'Michelle', name: 'Michelle', info: 'US Female · Soft' },
+                  { id: 'Roger', name: 'Roger', info: 'US Male · Strong' },
+                  { id: 'none', name: 'Silent (No Voice)', info: 'Music only' }
+                ].map((v) => (
+                  <div
+                    key={v.id}
+                    onClick={() => setVoice(v.id)}
+                    className={`p-2.5 rounded-xl border cursor-pointer transition-all ${
+                      voice === v.id
+                        ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200'
+                        : 'bg-[#181829] border-gray-800 text-gray-400 hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="text-xs font-bold">{v.name}</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">{v.info}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -581,7 +611,7 @@ export default function TextStoryGenerator() {
             {/* Quick Metadata Info */}
             <div className="mt-4 flex flex-col gap-1 items-center text-center">
               <span className="text-xs text-gray-400 capitalize">
-                🎬 Music: {musicTrack ? musicTrack.name.replace('_', ' ') : 'None'}
+                🎬 Music: {musicTrack && typeof musicTrack.name === 'string' ? musicTrack.name.replace('_', ' ') : 'None'}
               </span>
               <span className="text-xs text-gray-500 flex items-center gap-1 font-bold">
                 ⚡ Animation: <span className="text-purple-400 capitalize">{animationStyle || 'None'}</span>

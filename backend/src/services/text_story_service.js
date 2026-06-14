@@ -8,15 +8,65 @@ const BACKGROUNDS = [
   { name: 'yellow_sun', color: '#FFFFF0', pattern: 'sun', text: '#262600' },
   { name: 'gray_marble', color: '#F5F5F5', pattern: 'marble', text: '#1A1A1A' },
   { name: 'dark_navy', color: '#0A1128', pattern: 'navy', text: '#FFFFFF' },
-  { name: 'deep_red', color: '#1A0505', pattern: 'embers', text: '#FFFFFF' }
+  { name: 'deep_red', color: '#1A0505', pattern: 'embers', text: '#FFFFFF' },
+  { name: 'ocean_breeze', color: '#E0F7FA', pattern: 'waves', text: '#004D40' },
+  { name: 'sunset_glow', color: '#FFF3E0', pattern: 'sun', text: '#E65100' },
+  { name: 'forest_mist', color: '#E8F5E9', pattern: 'leaves', text: '#1B5E20' },
+  { name: 'rose_petal', color: '#FCE4EC', pattern: 'hearts', text: '#880E4F' },
+  { name: 'royal_purple', color: '#F3E5F5', pattern: 'dots', text: '#4A148C' },
+  { name: 'warm_sand', color: '#EFEBE9', pattern: 'waves', text: '#3E2723' },
+  { name: 'sage_green', color: '#F1F8E9', pattern: 'leaves', text: '#33691E' },
+  { name: 'cherry_blossom', color: '#FFF5F7', pattern: 'hearts', text: '#4A0E17' },
+  { name: 'midnight_sky', color: '#0B0C10', pattern: 'stars', text: '#F5F5F5' },
+  { name: 'gold_glimmer', color: '#FAF8F0', pattern: 'sun', text: '#4A3C00' },
+  { name: 'mint_choco', color: '#E8F8F5', pattern: 'dots', text: '#117864' },
+  { name: 'lavender_bliss', color: '#EADCF7', pattern: 'waves', text: '#4A148C' },
+  { name: 'apricot_cream', color: '#FEF5E7', pattern: 'sun', text: '#784212' },
+  { name: 'sky_cloud', color: '#EBF5FB', pattern: 'stars', text: '#1B4F72' },
+  { name: 'charcoal_dark', color: '#1C2833', pattern: 'dots', text: '#F2F4F4' },
+  { name: 'burgundy_wine', color: '#2C0812', pattern: 'hearts', text: '#FADBD8' },
+  { name: 'olive_garden', color: '#F4F6F6', pattern: 'leaves', text: '#196F3D' },
+  { name: 'soft_coral', color: '#FDF2E9', pattern: 'waves', text: '#6E2C00' },
+  { name: 'plum_purple', color: '#2E0854', pattern: 'stars', text: '#F5EEF8' },
+  { name: 'emerald_night', color: '#041F14', pattern: 'leaves', text: '#D4EFDF' },
+  { name: 'ice_berg', color: '#F4F6F7', pattern: 'waves', text: '#2471A3' },
+  { name: 'sweet_honey', color: '#FEF9E7', pattern: 'sun', text: '#7D6608' }
 ];
+
 
 const ACCENT_COLORS = [
   { name: 'Crimson', hex: '#E11D48' },
   { name: 'Teal', hex: '#0D9488' },
   { name: 'Gold', hex: '#D97706' },
   { name: 'Indigo', hex: '#4F46E5' },
-  { name: 'Emerald', hex: '#059669' }
+  { name: 'Emerald', hex: '#059669' },
+  { name: 'Lime', hex: '#84CC16' },
+  { name: 'Violet', hex: '#8B5CF6' },
+  { name: 'Rose', hex: '#F43F5E' },
+  { name: 'Amber', hex: '#F59E0B' },
+  { name: 'Orange', hex: '#F97316' },
+  { name: 'Cyan', hex: '#06B6D4' },
+  { name: 'Blue', hex: '#3B82F6' },
+  { name: 'Fuchsia', hex: '#D946EF' },
+  { name: 'Pink', hex: '#EC4899' },
+  { name: 'Sky', hex: '#0EA5E9' },
+  { name: 'Purple', hex: '#A855F7' },
+  { name: 'Red', hex: '#EF4444' },
+  { name: 'Yellow', hex: '#EAB308' },
+  { name: 'Mint', hex: '#10B981' },
+  { name: 'Coral', hex: '#F87171' },
+  { name: 'Lavender', hex: '#A78BFA' },
+  { name: 'Peach', hex: '#FDBA74' },
+  { name: 'Sea Green', hex: '#34D399' },
+  { name: 'Hot Pink', hex: '#FF69B4' },
+  { name: 'Deep Gold', hex: '#FFD700' },
+  { name: 'Dark Orange', hex: '#FF4500' },
+  { name: 'Neon Green', hex: '#39FF14' },
+  { name: 'Royal Blue', hex: '#4169E1' },
+  { name: 'Bright Orchid', hex: '#DA70D6' },
+  { name: 'Crimson Rose', hex: '#DC143C' },
+  { name: 'Turquoise', hex: '#40E0D0' },
+  { name: 'Cyber Magenta', hex: '#FF007F' }
 ];
 
 const ANIMATIONS = [
@@ -80,6 +130,28 @@ function pickRandomStyle() {
   };
 }
 
+function splitParagraph(paragraph, maxWords) {
+  const sentences = paragraph.match(/[^.!?]+[.!?]+(\s+|$)/g) || [paragraph];
+  const subParagraphs = [];
+  let currentSub = [];
+  let currentWords = 0;
+  for (const s of sentences) {
+    const wCount = s.split(/\s+/).filter(Boolean).length;
+    if (currentWords + wCount > maxWords && currentSub.length > 0) {
+      subParagraphs.push(currentSub.join(' ').trim());
+      currentSub = [s];
+      currentWords = wCount;
+    } else {
+      currentSub.push(s);
+      currentWords += wCount;
+    }
+  }
+  if (currentSub.length > 0) {
+    subParagraphs.push(currentSub.join(' ').trim());
+  }
+  return subParagraphs;
+}
+
 function splitIntoScreens(storyText, maxWordsPerScreen = 150) {
   if (!storyText) return [];
   const paragraphs = storyText.split(/\n+/).map(p => p.trim()).filter(Boolean);
@@ -89,13 +161,28 @@ function splitIntoScreens(storyText, maxWordsPerScreen = 150) {
 
   for (const p of paragraphs) {
     const wordCount = p.split(/\s+/).length;
-    if (currentWordCount + wordCount > maxWordsPerScreen && currentScreenText.length > 0) {
-      screens.push(currentScreenText.join('\n\n'));
-      currentScreenText = [p];
-      currentWordCount = wordCount;
+    if (wordCount > maxWordsPerScreen) {
+      const subParts = splitParagraph(p, maxWordsPerScreen);
+      for (const part of subParts) {
+        const partWordCount = part.split(/\s+/).length;
+        if (currentWordCount + partWordCount > maxWordsPerScreen && currentScreenText.length > 0) {
+          screens.push(currentScreenText.join('\n\n'));
+          currentScreenText = [part];
+          currentWordCount = partWordCount;
+        } else {
+          currentScreenText.push(part);
+          currentWordCount += partWordCount;
+        }
+      }
     } else {
-      currentScreenText.push(p);
-      currentWordCount += wordCount;
+      if (currentWordCount + wordCount > maxWordsPerScreen && currentScreenText.length > 0) {
+        screens.push(currentScreenText.join('\n\n'));
+        currentScreenText = [p];
+        currentWordCount = wordCount;
+      } else {
+        currentScreenText.push(p);
+        currentWordCount += wordCount;
+      }
     }
   }
 

@@ -56,26 +56,77 @@ const generateReel = async (req, res) => {
         console.warn('Error fetching articleId:', e.message);
       }
     }
-    
-    if (article) {
+
+    const isCustomStory = !!(customization.storyMakerCustom);
+
+    if (isCustomStory) {
+      // Direct splitting of the user's custom story text
+      const contentToUse = storyContent || (article && (article.content || article.title)) || 'No content provided';
+      const textStoryService = require('../services/text_story_service');
+      // Limit word count per screen to ~75 words so it fits beautifully in the card layout
+      const screens = textStoryService.splitIntoScreens(contentToUse, 75);
+      
+      const rawScenes = screens.map((text, idx) => {
+        const words = text.split(/\s+/).filter(Boolean).length;
+        // Allocate reading duration dynamically: ~2.5 words per second + 1.5s padding
+        const duration = Math.max(5.0, Math.min(12.0, Math.round((words / 2.5) + 1.5)));
+        return {
+          id: idx + 1,
+          type: 'content',
+          text,
+          duration
+        };
+      });
+
+      // Append CTA
+      const footerText = customization.footer?.text || 'Continue Reading in Comments..';
+      rawScenes.push({
+        id: rawScenes.length + 1,
+        type: 'cta',
+        text: footerText,
+        duration: 3.0
+      });
+
+      const totalDuration = rawScenes.reduce((sum, s) => sum + s.duration, 0);
+
+      // Create custom article if not already existing
+      if (!article) {
+        const cleanTitle = contentToUse.substring(0, 60) + '...';
+        const cleanUrl = 'custom-' + req.user.id + '-' + Date.now();
+        let insertResult;
+        try {
+          insertResult = db.prepare(`
+            INSERT INTO articles (title, url, content, source_category, usage_count)
+            VALUES (?, ?, ?, 'custom', 1)
+          `).run(cleanTitle, cleanUrl, contentToUse);
+        } catch (e) {
+          console.warn('Custom article insert warning:', e.message);
+        }
+        article = db.prepare('SELECT * FROM articles WHERE url = ?').get(cleanUrl);
+        if (!article) {
+          const lastId = insertResult ? insertResult.lastInsertRowid : 1;
+          article = { id: lastId, title: cleanTitle, url: cleanUrl, content: contentToUse };
+        }
+      }
+
+      script = {
+        scenes: rawScenes,
+        caption: `${contentToUse.substring(0, 150)}...\n\n#story #redditstories #fyp`,
+        hashtags: ['#story', '#redditstories', '#fyp'],
+        duration: totalDuration
+      };
+      
+      emotion = musicEngine.detectEmotion(article?.title || 'Story', contentToUse);
+    } else if (article) {
       const contentToUse = storyContent || article.content || article.title;
       emotion = musicEngine.detectEmotion(article.title, contentToUse);
-      const scenes = splitStoryIntoScenes(contentToUse, finalDuration);
-      const totalDuration = scenes.reduce((sum, s) => sum + s.duration, 0);
-      const storyStyle1 = pickTextStoryStyle();
-      script = {
-        scenes,
-        textSegments: buildTextSegments(contentToUse),
-        ...storyStyle1,
-        username: 'Story User',
-        footerText: 'Full Story In First Comment \uD83D\uDC47',
-        caption: `${contentToUse.substring(0, 150)}...\n\nFull Story In First Comment \uD83D\uDC47\n\n#storytime #redditstories #viral`,
-        hashtags: ['#storytime', '#redditstories', '#viral', '#fyp'],
-        duration: totalDuration,
-        cta: 'Full Story In First Comment \uD83D\uDC47',
-        aiProvider: 'custom',
-        aiModel: 'storymaker',
-      };
+      script = await generateSuspenseScenes(
+        article.title,
+        contentToUse,
+        emotion,
+        req.user.id,
+        finalDuration
+      );
     } else if (storyContent) {
       const cleanTitle = storyContent.substring(0, 60) + '...';
       const cleanUrl = 'custom-' + req.user.id + '-' + Date.now();
@@ -94,23 +145,14 @@ const generateReel = async (req, res) => {
         article = { id: lastId, title: cleanTitle, url: cleanUrl, content: storyContent };
       }
       
-      const scenes2 = splitStoryIntoScenes(storyContent, finalDuration);
-      const totalDuration2 = scenes2.reduce((sum, s) => sum + s.duration, 0);
-      const storyStyle2 = pickTextStoryStyle();
-      script = {
-        scenes: scenes2,
-        textSegments: buildTextSegments(storyContent),
-        ...storyStyle2,
-        username: 'Story User',
-        footerText: 'Full Story In First Comment \uD83D\uDC47',
-        caption: `${storyContent.substring(0, 150)}...\n\nFull Story In First Comment \uD83D\uDC47\n\n#storytime #redditstories #viral`,
-        hashtags: ['#storytime', '#redditstories', '#viral', '#fyp'],
-        duration: totalDuration2,
-        cta: 'Full Story In First Comment \uD83D\uDC47',
-        aiProvider: 'custom',
-        aiModel: 'storymaker',
-      };
-
+      emotion = musicEngine.detectEmotion(article.title, article.content);
+      script = await generateSuspenseScenes(
+        article.title,
+        article.content,
+        emotion,
+        req.user.id,
+        finalDuration
+      );
     } else {
       article = await getRandomArticle(req.user.id, category);
       if (!article) {
@@ -158,7 +200,7 @@ const generateReel = async (req, res) => {
       JSON.stringify(script.hashtags),
       music ? music.filename : null,
       JSON.stringify(script.scenes),
-      bgType || 'pixabay',
+      bgType || 'none',
       customImagePath || null
     );
 
@@ -180,7 +222,7 @@ const generateReel = async (req, res) => {
       themeData: customization,
       caption: script.caption,
       shortUrl: shortLink.shortUrl,
-      bgType: bgType || 'pixabay',
+      bgType: bgType || 'none',
       customImagePath: customImagePath || null,
     };
 
@@ -288,12 +330,20 @@ const downloadReel = (req, res) => {
       return res.status(400).json({ error: 'Reel is not ready yet' });
     }
 
-    let absolutePath = reel.file_path.startsWith('/storage')
-      ? path.resolve(__dirname, '../..', reel.file_path.replace(/^\//, ''))
-      : path.resolve(__dirname, '../../', reel.file_path);
+    // Resolve absolute path — support both /output/ and legacy /storage/ prefixes
+    const rootDir = path.resolve(__dirname, '../../..');
+    let absolutePath;
+    if (reel.file_path.startsWith('/output')) {
+      absolutePath = path.join(rootDir, reel.file_path.replace(/^\//, ''));
+    } else if (reel.file_path.startsWith('/storage')) {
+      absolutePath = path.join(rootDir, reel.file_path.replace(/^\//, ''));
+    } else {
+      absolutePath = path.resolve(rootDir, reel.file_path);
+    }
 
+    // Fallback: search output/reels by filename only
     if (!fs.existsSync(absolutePath)) {
-      absolutePath = path.resolve(__dirname, '../../output', path.basename(reel.file_path));
+      absolutePath = path.join(rootDir, 'output', 'reels', path.basename(reel.file_path));
     }
     if (!fs.existsSync(absolutePath)) {
       return res.status(404).json({ error: 'Reel file not found on disk' });
@@ -448,6 +498,20 @@ const getRandomWebsiteArticle = async (req, res) => {
   }
 };
 
+const getAvailableArticles = (req, res) => {
+  try {
+    const articles = db.prepare(`
+      SELECT id, title, substr(content, 1, 100) as content_preview, created_at 
+      FROM articles 
+      ORDER BY created_at DESC LIMIT 50
+    `).all();
+    res.json({ articles });
+  } catch (error) {
+    console.error('[ReelController] getAvailableArticles error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch articles' });
+  }
+};
+
 module.exports = {
   generateReel,
   getReelStatus,
@@ -456,4 +520,5 @@ module.exports = {
   getUserCampaigns,
   deleteReel,
   getRandomWebsiteArticle,
+  getAvailableArticles,
 };

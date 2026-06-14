@@ -8,6 +8,7 @@ const useTextStoryStore = create((set, get) => ({
   storyText: '',
   username: 'Sarah Storyteller',
   avatarUrl: null,
+  voice: 'Jenny',          // voice narration name (Jenny, Aria, Guy, Michelle, none)
 
   // Selected styles
   background: null,        // { name, color, pattern, text }
@@ -40,6 +41,7 @@ const useTextStoryStore = create((set, get) => ({
   setAnimation: (anim) => set({ animationStyle: anim }),
   setMusic: (track) => set({ musicTrack: track }),
   setSfx: (sfxList) => set({ sfx: sfxList }),
+  setVoice: (v) => set({ voice: v }),
 
   // Re-roll all options randomly from available selections
   randomizeAll: () => {
@@ -125,7 +127,7 @@ const useTextStoryStore = create((set, get) => ({
   },
 
   generateStory: async () => {
-    const { storyText, username, avatarUrl, background, accentColor, animationStyle, musicTrack, sfx } = get();
+    const { storyText, username, avatarUrl, background, accentColor, animationStyle, musicTrack, sfx, voice } = get();
     if (!storyText.trim()) {
       toast.error('Story text cannot be empty');
       return null;
@@ -141,6 +143,7 @@ const useTextStoryStore = create((set, get) => ({
           avatarUrl,
           // Send current style selections
           theme: 'text_story',
+          voice: voice || 'Jenny',
           customization: {
             textStory: {
               storyText,
@@ -150,7 +153,8 @@ const useTextStoryStore = create((set, get) => ({
               accentColor,
               animationStyle,
               musicTrack,
-              sfx
+              sfx,
+              voice: voice || 'Jenny'
             }
           }
         },

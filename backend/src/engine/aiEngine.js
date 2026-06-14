@@ -5,8 +5,8 @@ const OpenAI = require('openai'); // For OpenRouter
 const db = require('../config/db');
 const { decrypt } = require('../services/encryptionService');
 
-// Priorities: 1 = Groq, 2 = Gemini, 3 = OpenRouter, 4 = HuggingFace
-const PROVIDER_PRIORITY = ['groq', 'gemini', 'openrouter', 'huggingface'];
+// Priorities: 1 = Groq, 2 = Gemini, 3 = Kimi, 4 = OpenRouter, 5 = HuggingFace
+const PROVIDER_PRIORITY = ['groq', 'gemini', 'kimi', 'openrouter', 'huggingface'];
 
 const getDecryptedKey = (provider, userId) => {
   // 1. Try User API Key
@@ -48,6 +48,17 @@ const executeWithProvider = async (provider, prompt, userId) => {
           contents: prompt,
         });
         return response.text;
+
+      case 'kimi':
+        const kimi = new OpenAI({
+          baseURL: "https://api.moonshot.cn/v1",
+          apiKey: apiKey,
+        });
+        const kimiRes = await kimi.chat.completions.create({
+          model: 'moonshot-v1-8k',
+          messages: [{ role: 'user', content: prompt }]
+        });
+        return kimiRes.choices[0]?.message?.content;
 
       case 'openrouter':
         const openrouter = new OpenAI({

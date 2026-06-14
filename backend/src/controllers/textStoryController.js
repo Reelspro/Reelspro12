@@ -10,7 +10,7 @@ const fs = require('fs');
 
 const generateTextStory = async (req, res) => {
   try {
-    const { storyText, username = 'Sarah Storyteller', avatarUrl = null } = req.body;
+    const { storyText, username = 'Sarah Storyteller', avatarUrl = null, customization, voice = 'Jenny' } = req.body;
 
     if (!storyText || storyText.trim().length === 0) {
       return res.status(400).json({ error: 'Story text is required.' });
@@ -35,8 +35,36 @@ const generateTextStory = async (req, res) => {
       article = { id: lastId, title: cleanTitle, url: cleanUrl, content: storyText };
     }
 
-    // Generate full text story config
-    const textStoryReel = textStoryService.generateTextStoryReel(storyText, username, avatarUrl);
+    // Use user-selected customization if provided, otherwise pick random
+    let textStoryReel;
+    if (customization && customization.textStory) {
+      const ts = customization.textStory;
+      textStoryReel = {
+        storyText,
+        username: ts.username || username,
+        avatarUrl: ts.avatarUrl || avatarUrl,
+        background: ts.background || null,
+        accentColor: ts.accentColor || null,
+        animationStyle: ts.animationStyle || null,
+        musicTrack: ts.musicTrack || null,
+        sfx: ts.sfx || [],
+        screens: [],
+        footerText: 'Full Story In First Comment 👇'
+      };
+
+      const screenTexts = textStoryService.splitIntoScreens(storyText);
+      textStoryReel.screens = screenTexts.map((text, idx) => {
+        const segments = textStoryService.parseSegments(text, textStoryReel.accentColor?.hex || '#B22222');
+        return {
+          id: idx + 1,
+          rawText: text,
+          segments,
+          isLast: idx === screenTexts.length - 1
+        };
+      });
+    } else {
+      textStoryReel = textStoryService.generateTextStoryReel(storyText, username, avatarUrl);
+    }
 
     // Build the scenes timing
     const SCREEN_DURATION = 5.0; // 5 seconds per story screen
@@ -69,13 +97,20 @@ const generateTextStory = async (req, res) => {
       duration: totalDuration
     };
 
-    // Find music
+    // Find music — use user selected musicTrack.emotion or musicTrack.name as category
     let music = null;
     if (textStoryReel.musicTrack) {
-      // Map mood to category (e.g. suspense_build -> suspense)
-      const emotion = textStoryReel.musicTrack.emotion;
-      music = await musicEngine.matchSoundtrack(emotion);
+      // Use emotion field first, then name as fallback
+      const musicEmotion = textStoryReel.musicTrack.emotion || textStoryReel.musicTrack.name;
+      music = await musicEngine.matchSoundtrack(musicEmotion);
+    } else {
+      // Auto-detect from story text
+      const autoEmotion = musicEngine.detectEmotion('story', storyText);
+      music = await musicEngine.matchSoundtrack(autoEmotion);
     }
+    
+    // Determine voice to use
+    const selectedVoice = (customization?.textStory?.voice) || voice || 'Jenny';
 
     const reelId = uuidv4();
     const shortLink = await shortenerService.createLink(reelId, req.user.id, article.url);
@@ -117,7 +152,8 @@ const generateTextStory = async (req, res) => {
       musicPath: music?.filePath || null,
       theme: 'text_story',
       themeData: {
-        textStory: textStoryReel
+        textStory: textStoryReel,
+        voice: selectedVoice
       },
       caption: script.caption,
       shortUrl: shortLink.shortUrl,

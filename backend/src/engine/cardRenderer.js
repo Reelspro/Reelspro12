@@ -24,10 +24,11 @@ async function generateCardImage({ storyText, theme = 'dark', username = 'Reddit
     custom = themeData;
     T = {
       bg: custom.bg?.color || T.bg,
-      card: custom.bg?.color2 || T.card,
-      border: custom.bg?.color2 || T.border,
+      card: custom.bg?.cardColor || custom.bg?.color2 || T.card,
+      border: custom.bg?.borderColor || custom.bg?.cardColor || custom.bg?.color2 || T.border,
       text: custom.text?.color || T.text,
       highlight: custom.text?.highlight || T.highlight,
+      highlightText: T.highlightText,
       username: custom.profile?.color || T.username,
       handle: T.handle,
       accent: custom.profile?.color || T.accent,
@@ -188,7 +189,7 @@ async function generateCardImage({ storyText, theme = 'dark', username = 'Reddit
         if (seg.highlight) {
           ctx.fillStyle = T.highlight;
           ctx.fillRect(x - 4, y - 2, w + 8, fontSize + 6);
-          ctx.fillStyle = T.highlightText || '#ffffff';
+          ctx.fillStyle = T.highlightText || T.text || '#ffffff';
         } else {
           ctx.fillStyle = T.text;
         }

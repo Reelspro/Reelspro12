@@ -6,6 +6,7 @@ import useAuthStore from '../store/authStore';
 const PROVIDERS = [
   { id: 'groq', name: 'Groq (llama3-70b)' },
   { id: 'gemini', name: 'Google Gemini' },
+  { id: 'kimi', name: 'Kimi AI (Moonshot)' },
   { id: 'qwen', name: 'Alibaba Qwen' },
   { id: 'openrouter', name: 'OpenRouter' },
   { id: 'huggingface', name: 'HuggingFace' },

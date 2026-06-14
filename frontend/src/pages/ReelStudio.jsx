@@ -152,7 +152,7 @@ export default function ReelStudio() {
       customization,
       parseInt(duration, 10),
       'all',
-      'pixabay',
+      'none',
       null,
       customText
     );

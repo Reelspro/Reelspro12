@@ -1,17 +1,50 @@
 import React, { useState, useRef } from 'react';
 
 const PRESET_COLORS = [
-  '#000000','#1a1a1a','#333333','#555555','#777777','#999999','#bbbbbb','#ffffff',
-  '#1a0033','#3d0080','#7c3aed','#a78bfa','#c4b5fd','#ede9fe','#ddd6fe','#f5f3ff',
-  '#1e1b4b','#312e81','#3730a3','#4f46e5','#6366f1','#818cf8','#a5b4fc','#e0e7ff',
-  '#0c4a6e','#0369a1','#0284c7','#0ea5e9','#38bdf8','#7dd3fc','#bae6fd','#e0f2fe',
-  '#064e3b','#065f46','#047857','#059669','#10b981','#34d399','#6ee7b7','#d1fae5',
-  '#7f1d1d','#991b1b','#b91c1c','#dc2626','#ef4444','#f87171','#fca5a5','#fee2e2',
+  '#000000','#0b0f19','#111827','#18181b','#1a1a2e','#2d3748','#3f3f46','#ffffff',
+  '#2e1065','#4c1d95','#6b21a8','#9333ea','#a855f7','#c084fc','#d8b4fe','#f3e8ff',
+  '#4c0519','#831843','#be185d','#db2777','#f43f5e','#fb7185','#fecdd3','#ffe4e6',
+  '#082f49','#0369a1','#0284c7','#0ea5e9','#0d9488','#14b8a6','#5eead4','#ccfbf1',
+  '#022c22','#065f46','#059669','#10b981','#34d399','#6ee7b7','#a7f3d0','#ecfdf5',
+  '#450a0a','#7f1d1d','#b91c1c','#ea580c','#f59e0b','#fbbf24','#fcd34d','#fef3c7',
 ];
 
 export default function ColorPicker({ color, onChange, onClose }) {
   const [hex, setHex] = useState(color || '#7c3aed');
   const [hue, setHue] = useState(270);
+
+  const [customColors, setCustomColors] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sm_custom_colors');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return Array(16).fill(null);
+  });
+
+  const handleEyeDropper = async () => {
+    if (!window.EyeDropper) {
+      alert("Your browser does not support the EyeDropper API");
+      return;
+    }
+    try {
+      const eyeDropper = new window.EyeDropper();
+      const result = await eyeDropper.open();
+      apply(result.sRGBHex);
+    } catch (e) {}
+  };
+
+  const handleAddCustomColor = () => {
+    const newColors = [...customColors];
+    const emptyIdx = newColors.indexOf(null);
+    if (emptyIdx !== -1) {
+      newColors[emptyIdx] = hex;
+    } else {
+      newColors.shift();
+      newColors.push(hex);
+    }
+    setCustomColors(newColors);
+    localStorage.setItem('sm_custom_colors', JSON.stringify(newColors));
+  };
 
   const apply = (c) => { setHex(c); onChange && onChange(c); };
 
@@ -31,15 +64,19 @@ export default function ColorPicker({ color, onChange, onClose }) {
                 }} />
               ))}
             </div>
-            <button style={{ width: '100%', padding: '8px', borderRadius: 8, border: '1px solid #2a2a3e', background: '#1a1a2e', color: '#aaa', fontSize: 12, cursor: 'pointer', marginBottom: 10 }}>
+            <button onClick={handleEyeDropper} style={{ width: '100%', padding: '8px', borderRadius: 8, border: '1px solid #2a2a3e', background: '#1a1a2e', color: '#aaa', fontSize: 12, cursor: 'pointer', marginBottom: 10 }}>
               🖱️ Pick Screen Color
             </button>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8,1fr)', gap: 4, marginBottom: 8 }}>
-              {Array(16).fill(null).map((_, i) => (
-                <div key={i} style={{ width: '100%', aspectRatio: '1', borderRadius: 4, background: '#fff', border: '1px solid #2a2a3e' }} />
+              {customColors.map((c, i) => (
+                <div key={i} onClick={() => c && apply(c)} style={{
+                  width: '100%', aspectRatio: '1', borderRadius: 4, background: c || '#1a1a2e',
+                  border: (hex === c && c) ? '2px solid #a78bfa' : '1px solid #2a2a3e',
+                  cursor: c ? 'pointer' : 'default', boxSizing: 'border-box'
+                }} />
               ))}
             </div>
-            <button style={{ width: '100%', padding: '7px', borderRadius: 8, border: '1px solid #2a2a3e', background: '#1a1a2e', color: '#aaa', fontSize: 11, cursor: 'pointer' }}>
+            <button onClick={handleAddCustomColor} style={{ width: '100%', padding: '7px', borderRadius: 8, border: '1px solid #2a2a3e', background: '#1a1a2e', color: '#aaa', fontSize: 11, cursor: 'pointer' }}>
               + Add to Custom Colors
             </button>
           </div>

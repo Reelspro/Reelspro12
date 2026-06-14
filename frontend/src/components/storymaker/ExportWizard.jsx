@@ -397,7 +397,7 @@ function RenderModal({ duration, audio, onClose, storyMakerCustom, storyContent,
       ...(storyMakerCustom || {})
     };
     
-    generateReel('suspense', customPayload, duration, 'all', 'pixabay', null, storyContent, articleId);
+    generateReel('suspense', customPayload, duration, 'all', 'none', null, storyContent, articleId);
   }, [generateReel, duration, audio, storyMakerCustom, storyContent, articleId]);
 
   useEffect(() => {

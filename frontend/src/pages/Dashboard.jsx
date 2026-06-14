@@ -147,30 +147,35 @@ const Dashboard = () => {
                   <p className="text-gray-500 text-center py-4">No data yet. Generate your first reel!</p>
                 ) : (
                   <div className="space-y-4">
-                    {(topReels || []).map((reel, index) => (
-                      <div key={reel.id} className="flex items-center gap-4 bg-gray-700/30 p-3 rounded-lg border border-gray-700">
-                        <div className="text-gray-500 font-bold w-4">{index + 1}</div>
-                        <div className="w-12 h-12 bg-black rounded overflow-hidden flex-shrink-0">
-                          {reel.thumbnail_path && (
-                            <img
-                              src={`${STATIC_URL}/${reel.thumbnail_path.replace(/\\/g, '/')}`}
-                              alt="Thumbnail"
-                              className="w-full h-full object-cover"
-                            />
-                          )}
+                    {(topReels || []).map((reel, index) => {
+                      if (!reel) return null;
+                      return (
+                        <div key={reel.id || index} className="flex items-center gap-4 bg-gray-700/30 p-3 rounded-lg border border-gray-700">
+                          <div className="text-gray-500 font-bold w-4">{index + 1}</div>
+                          <div className="w-12 h-12 bg-black rounded overflow-hidden flex-shrink-0">
+                            {reel.thumbnail_path && typeof reel.thumbnail_path === 'string' && (
+                              <img
+                                src={`${STATIC_URL}/${reel.thumbnail_path.replace(/\\/g, '/')}`}
+                                alt="Thumbnail"
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-200 truncate" title={reel.article_title || 'Untitled'}>
+                              {reel.article_title || 'Untitled'}
+                            </p>
+                            <p className="text-xs text-gray-400">/{reel.short_url || ''}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-green-400 flex items-center gap-1 justify-end">
+                              <MousePointerClick size={14} /> {reel.total_clicks || 0}
+                            </p>
+                            <p className="text-xs text-gray-500">Clicks</p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-200 truncate" title={reel.article_title}>{reel.article_title}</p>
-                          <p className="text-xs text-gray-400">/{reel.short_url}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-400 flex items-center gap-1 justify-end">
-                            <MousePointerClick size={14} /> {reel.total_clicks}
-                          </p>
-                          <p className="text-xs text-gray-500">Clicks</p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

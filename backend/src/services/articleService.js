@@ -2,6 +2,18 @@ const dbHelper = require('./dbHelper');
 const redisConnection = require('../config/redis');
 const { scrapeArticleContent } = require('../engine/scraper');
 
+const isTruncated = (text) => {
+  if (!text) return true;
+  const clean = text.trim();
+  return clean.endsWith('[...]') || 
+         clean.endsWith('[…]') || 
+         clean.endsWith('...') || 
+         clean.endsWith('…') || 
+         clean.toLowerCase().endsWith('read more') || 
+         clean.toLowerCase().endsWith('continue reading') ||
+         clean.length < 250;
+};
+
 const saveArticleToPool = async (articleData) => {
   try {
     const db = require('../config/db');
@@ -11,10 +23,10 @@ const saveArticleToPool = async (articleData) => {
     let og_image = articleData.og_image || articleData.image || null;
     let metadata = articleData.metadata || null;
 
-    if ((!content || content.length < 50) && articleData.url) {
+    if ((!content || isTruncated(content)) && articleData.url) {
       const scraped = await scrapeArticleContent(articleData.url);
-      if (scraped) {
-        content = content || scraped.content;
+      if (scraped && scraped.content && scraped.content.length > (content ? content.length : 0)) {
+        content = scraped.content;
         og_image = og_image || scraped.og_image;
         metadata = metadata || scraped.metadata;
         if (!articleData.title && scraped.title) articleData.title = scraped.title;
@@ -39,7 +51,9 @@ const saveArticleToPool = async (articleData) => {
     }
 
     const updates = {};
-    if (content && (!existing.content || existing.content.length < 50)) updates.content = content;
+    if (content && (!existing.content || existing.content.length < 50 || (isTruncated(existing.content) && content.length > existing.content.length))) {
+      updates.content = content;
+    }
     if (og_image && !existing.og_image) updates.og_image = og_image;
     if (metadata && !existing.metadata) updates.metadata = metadata;
     if (articleData.image && !existing.image) updates.image = articleData.image;
@@ -60,25 +74,36 @@ const saveArticleToPool = async (articleData) => {
 const backfillArticleContent = async (limit = 50) => {
   const db = require('../config/db');
   const rows = db.prepare(`
-    SELECT id, url, title, image FROM articles
-    WHERE content IS NULL OR length(content) < 50
+    SELECT id, url, title, image, content FROM articles
+    WHERE (content IS NULL 
+       OR length(content) < 250 
+       OR content LIKE '%[...]%' 
+       OR content LIKE '%[…]%' 
+       OR content LIKE '%...%' 
+       OR content LIKE '%…%')
+       AND source_category NOT IN ('custom', 'custom_textstory')
+       AND url LIKE 'http%'
+    ORDER BY id DESC
     LIMIT ?
-  `).all(limit);
+  `).all(limit * 3);
 
   let updated = 0;
   for (const row of rows) {
-    const scraped = await scrapeArticleContent(row.url);
-    if (scraped?.content) {
-      dbHelper.update('articles', row.id, {
-        content: scraped.content,
-        og_image: scraped.og_image || row.image,
-        metadata: scraped.metadata,
-        image: row.image || scraped.image,
-      });
-      updated++;
+    if (updated >= limit) break;
+    if (!row.content || isTruncated(row.content)) {
+      const scraped = await scrapeArticleContent(row.url);
+      if (scraped?.content && scraped.content.length > (row.content ? row.content.length : 0)) {
+        dbHelper.update('articles', row.id, {
+          content: scraped.content,
+          og_image: scraped.og_image || row.image,
+          metadata: scraped.metadata,
+          image: row.image || scraped.image,
+        });
+        updated++;
+      }
     }
   }
-  console.log(`[ArticleService] Backfilled content for ${updated}/${rows.length} articles`);
+  console.log(`[ArticleService] Backfilled content for ${updated} articles`);
   return updated;
 };
 

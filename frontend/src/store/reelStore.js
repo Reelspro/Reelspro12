@@ -25,7 +25,7 @@ const useReelStore = create((set, get) => ({
     }
   },
 
-  generateReel: async (theme, customization = {}, duration = 10, category = '', bgType = 'pixabay', customImagePath = null, storyContent = null, articleId = null) => {
+  generateReel: async (theme, customization = {}, duration = 10, category = '', bgType = 'none', customImagePath = null, storyContent = null, articleId = null) => {
     set({ isGenerating: true });
     try {
       const token = localStorage.getItem('token');

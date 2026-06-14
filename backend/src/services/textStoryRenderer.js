@@ -40,17 +40,49 @@ const BODY_BOTTOM = H - FOOTER_H - 20;
 
 /* ─── Pastel backgrounds ───────────────────────────── */
 const BACKGROUNDS = [
-  { id: 'pink_floral',   color: '#FFE4E8' },
-  { id: 'lavender_dots', color: '#F0EAF8' },
-  { id: 'cream_leaves',  color: '#FFF8E7' },
-  { id: 'sky_stars',     color: '#E8F4FD' },
-  { id: 'peach_hearts',  color: '#FFE8D6' },
-  { id: 'mint_waves',    color: '#E8F8F2' },
-  { id: 'yellow_glow',   color: '#FFFDE7' },
+  { id: 'pink_floral',   color: '#FFF0F5' },
+  { id: 'lavender_dots', color: '#F6F0FF' },
+  { id: 'cream_leaves',  color: '#FFFDD0' },
+  { id: 'sky_stars',     color: '#F0F8FF' },
+  { id: 'peach_hearts',  color: '#FFEBE6' },
+  { id: 'mint_waves',    color: '#F0FFF8' },
+  { id: 'yellow_sun',    color: '#FFFFF0' },
   { id: 'gray_marble',   color: '#F5F5F5' },
+  { id: 'dark_navy',     color: '#0A1128' },
+  { id: 'deep_red',      color: '#1A0505' },
+  { id: 'ocean_breeze',  color: '#E0F7FA' },
+  { id: 'sunset_glow',   color: '#FFF3E0' },
+  { id: 'forest_mist',   color: '#E8F5E9' },
+  { id: 'rose_petal',    color: '#FCE4EC' },
+  { id: 'royal_purple',  color: '#F3E5F5' },
+  { id: 'warm_sand',     color: '#EFEBE9' },
+  { id: 'sage_green',    color: '#F1F8E9' },
+  { id: 'cherry_blossom', color: '#FFF5F7' },
+  { id: 'midnight_sky',  color: '#0B0C10' },
+  { id: 'gold_glimmer',  color: '#FAF8F0' },
+  { id: 'mint_choco',    color: '#E8F8F5' },
+  { id: 'lavender_bliss', color: '#EADCF7' },
+  { id: 'apricot_cream', color: '#FEF5E7' },
+  { id: 'sky_cloud',     color: '#EBF5FB' },
+  { id: 'charcoal_dark', color: '#1C2833' },
+  { id: 'burgundy_wine', color: '#2C0812' },
+  { id: 'olive_garden',  color: '#F4F6F6' },
+  { id: 'soft_coral',    color: '#FDF2E9' },
+  { id: 'plum_purple',   color: '#2E0854' },
+  { id: 'emerald_night', color: '#041F14' },
+  { id: 'ice_berg',      color: '#F4F6F7' },
+  { id: 'sweet_honey',   color: '#FEF9E7' }
 ];
 
-const ACCENT_COLORS = ['#B22222', '#CC3300', '#E65100', '#C2185B', '#00796B'];
+const ACCENT_COLORS = [
+  '#E11D48', '#0D9488', '#D97706', '#4F46E5', '#059669',
+  '#84CC16', '#8B5CF6', '#F43F5E', '#F59E0B', '#F97316',
+  '#06B6D4', '#3B82F6', '#D946EF', '#EC4899', '#0EA5E9',
+  '#A855F7', '#EF4444', '#EAB308', '#10B981', '#F87171',
+  '#A78BFA', '#FDBA74', '#34D399', '#FF69B4', '#FFD700',
+  '#FF4500', '#39FF14', '#4169E1', '#DA70D6', '#DC143C',
+  '#40E0D0', '#FF007F'
+];
 
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -63,7 +95,10 @@ function drawSubtlePattern(ctx, patternId, w, h) {
 
   switch (patternId) {
     case 'pink_floral':
-    case 'peach_hearts': {
+    case 'peach_hearts':
+    case 'rose_petal':
+    case 'cherry_blossom':
+    case 'burgundy_wine': {
       // Tiny hearts grid
       ctx.fillStyle = '#C2185B';
       for (let x = 60; x < w; x += 120) {
@@ -74,7 +109,10 @@ function drawSubtlePattern(ctx, patternId, w, h) {
       break;
     }
     case 'lavender_dots':
-    case 'gray_marble': {
+    case 'gray_marble':
+    case 'royal_purple':
+    case 'mint_choco':
+    case 'charcoal_dark': {
       // Dots
       ctx.fillStyle = '#7B1FA2';
       for (let x = 50; x < w; x += 80) {
@@ -86,7 +124,11 @@ function drawSubtlePattern(ctx, patternId, w, h) {
       }
       break;
     }
-    case 'sky_stars': {
+    case 'sky_stars':
+    case 'dark_navy':
+    case 'midnight_sky':
+    case 'sky_cloud':
+    case 'plum_purple': {
       // Stars
       ctx.fillStyle = '#1565C0';
       for (let x = 60; x < w; x += 100) {
@@ -96,7 +138,12 @@ function drawSubtlePattern(ctx, patternId, w, h) {
       }
       break;
     }
-    case 'mint_waves': {
+    case 'mint_waves':
+    case 'ocean_breeze':
+    case 'warm_sand':
+    case 'lavender_bliss':
+    case 'soft_coral':
+    case 'ice_berg': {
       // Wavy horizontal lines
       ctx.strokeStyle = '#00897B';
       ctx.lineWidth = 2;
@@ -111,7 +158,11 @@ function drawSubtlePattern(ctx, patternId, w, h) {
       }
       break;
     }
-    case 'cream_leaves': {
+    case 'cream_leaves':
+    case 'forest_mist':
+    case 'sage_green':
+    case 'olive_garden':
+    case 'emerald_night': {
       // Leaf ellipses
       ctx.fillStyle = '#388E3C';
       for (let x = 80; x < w; x += 140) {
@@ -127,7 +178,13 @@ function drawSubtlePattern(ctx, patternId, w, h) {
       }
       break;
     }
-    case 'yellow_glow': {
+    case 'yellow_sun':
+    case 'yellow_glow':
+    case 'deep_red':
+    case 'sunset_glow':
+    case 'gold_glimmer':
+    case 'apricot_cream':
+    case 'sweet_honey': {
       // Sun rays from top-right corner
       ctx.strokeStyle = '#F57F17';
       ctx.lineWidth = 1.5;
@@ -236,29 +293,46 @@ function drawHeader(ctx, config) {
   const avatarY = 30 + avatarR;
 
   // Avatar circle
-  const initials = (config.username || 'S').substring(0, 2);
-  drawAvatarPlaceholder(ctx, avatarX, avatarY, avatarR, initials);
+  let avatarDrawn = false;
+  if (config.avatarImg) {
+    try {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(config.avatarImg, avatarX - avatarR, avatarY - avatarR, avatarR * 2, avatarR * 2);
+      ctx.restore();
+      avatarDrawn = true;
+    } catch (e) {
+      console.warn('[TextStoryRenderer] Failed to draw avatar image:', e.message);
+    }
+  }
+
+  if (!avatarDrawn) {
+    const initials = (config.username || 'S').substring(0, 2);
+    drawAvatarPlaceholder(ctx, avatarX, avatarY, avatarR, initials);
+  }
 
   const textX = PAD + avatarR * 2 + 18;
 
   // Username
-  ctx.fillStyle = '#1A1A1A';
+  ctx.fillStyle = config.textColor || '#1A1A1A';
   ctx.font = 'bold 30px Arial';
   ctx.textBaseline = 'alphabetic';
   ctx.fillText(config.username || 'Story User', textX, 52);
 
   // Timestamp
-  ctx.fillStyle = '#666666';
+  ctx.fillStyle = config.textColor === '#FFFFFF' ? 'rgba(255,255,255,0.7)' : '#666666';
   ctx.font = '24px Arial';
   ctx.fillText('2hrs ago \u2022 \uD83D\uDC65', textX, 80);
 
   // "A Text Story"
-  ctx.fillStyle = '#888888';
+  ctx.fillStyle = config.textColor === '#FFFFFF' ? 'rgba(255,255,255,0.6)' : '#888888';
   ctx.font = '22px Arial';
   ctx.fillText('A Text Story', textX, 106);
 
   // Separator line
-  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  ctx.strokeStyle = config.textColor === '#FFFFFF' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(PAD, HEADER_H);
@@ -343,7 +417,7 @@ function renderStoryFrame(config) {
       ctx.fillStyle = accentColor;
     } else {
       ctx.font = `900 ${FONT_SIZE}px Arial`;
-      ctx.fillStyle = '#1A1A1A';
+      ctx.fillStyle = config.textColor || '#1A1A1A';
     }
 
     y = drawWrappedSegment(ctx, seg.text || '', PAD, y, maxTextW, LINE_H);
@@ -435,28 +509,88 @@ async function renderTextStoryReel(reelData, outputPath, options = {}) {
   // Pick global style (random if not specified)
   const bgChoice = pickRandom(BACKGROUNDS);
   const accentColor = reelData.accentColor || pickRandom(ACCENT_COLORS);
+
+  // Create temp dir first to resolve assets
+  const outputDir = path.dirname(outputPath);
+  fs.mkdirSync(outputDir, { recursive: true });
+  const tempDir = path.join(outputDir, `ts_render_${Date.now()}`);
+  fs.mkdirSync(tempDir, { recursive: true });
+
+  // Resolve and load profile avatar if available
+  let avatarImg = null;
+  let loadImage = null;
+  try {
+    const lib = (() => { try { return require('@napi-rs/canvas'); } catch { return require('canvas'); } })();
+    loadImage = lib.loadImage;
+  } catch (e) {
+    console.warn('[TextStoryRenderer] Canvas library not found for avatar loading:', e.message);
+  }
+
+  if (reelData.avatarUrl && loadImage) {
+    let avatarPath = null;
+    const avatar = reelData.avatarUrl;
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      try {
+        const { downloadImage } = require('../engine/ffmpegRenderer');
+        const tempAvatar = path.join(tempDir, `avatar.png`);
+        avatarPath = await downloadImage(avatar, tempAvatar);
+      } catch (e) {
+        console.warn('[TextStoryRenderer] Avatar download failed:', e.message);
+      }
+    } else if (fs.existsSync(avatar)) {
+      avatarPath = avatar;
+    } else {
+      const rootDir = path.resolve(__dirname, '../../..');
+      const publicPath = path.join(rootDir, avatar.replace(/^\//, ''));
+      if (fs.existsSync(publicPath)) {
+        avatarPath = publicPath;
+      }
+    }
+
+    if (avatarPath && fs.existsSync(avatarPath)) {
+      try {
+        avatarImg = await loadImage(avatarPath);
+        console.log('[TextStoryRenderer] Loaded avatar image successfully:', avatarPath);
+      } catch (e) {
+        console.warn('[TextStoryRenderer] Failed to load avatar image:', e.message);
+      }
+    }
+  }
+
   const globalStyle = {
     backgroundColor: reelData.backgroundColor || bgChoice.color,
     patternId: reelData.patternId || bgChoice.id,
     accentColor,
+    textColor: reelData.textColor || bgChoice.text || '#1A1A1A',
     username: reelData.username || 'Story User',
     footerText: reelData.footerText || 'Full Story In First Comment \uD83D\uDC47',
+    avatarImg,
   };
 
   // Build per-scene configs
   let sceneConfigs;
-  if (reelData.textSegments) {
+  if (reelData.screens && reelData.screens.length > 0) {
+    sceneConfigs = scenes.map((scene, idx) => {
+      if (scene.type === 'cta') {
+        return {
+          ...globalStyle,
+          textSegments: [
+            { text: 'Read More.....', style: 'cta' }
+          ],
+        };
+      }
+      const screenData = reelData.screens[idx];
+      return {
+        ...globalStyle,
+        textSegments: screenData ? screenData.segments : [{ text: scene.text, style: 'normal' }]
+      };
+    });
+  } else if (reelData.textSegments) {
     // Single page story — render same segments on all scenes
     sceneConfigs = scenes.map(() => ({ ...globalStyle, textSegments: reelData.textSegments }));
   } else {
     sceneConfigs = buildSceneConfigs(scenes, globalStyle);
   }
-
-  // Create temp dir
-  const outputDir = path.dirname(outputPath);
-  fs.mkdirSync(outputDir, { recursive: true });
-  const tempDir = path.join(outputDir, `ts_render_${Date.now()}`);
-  fs.mkdirSync(tempDir, { recursive: true });
 
   try {
     const N = scenes.length;
@@ -517,14 +651,14 @@ async function renderTextStoryReel(reelData, outputPath, options = {}) {
     if (hasMusic) {
       inputArgs.push(`-i "${musicPath}"`);
       const musicIdx = currentInputIdx++;
-      filterComplexParts.push(`[${musicIdx}:a]volume=0.55,afade=t=in:d=2,afade=t=out:st=${getTotalDuration(scenes) - 2}:d=2[bgm]`);
+      filterComplexParts.push(`[${musicIdx}:a]volume=0.8,afade=t=in:d=2,afade=t=out:st=${getTotalDuration(scenes) - 2}:d=2[bgm]`);
       mixInputs.push('[bgm]');
     }
 
     if (hasVoice) {
       inputArgs.push(`-i "${voiceoverPath}"`);
       const voiceIdx = currentInputIdx++;
-      filterComplexParts.push(`[${voiceIdx}:a]volume=1.5[voice]`);
+      filterComplexParts.push(`[${voiceIdx}:a]volume=2.0[voice]`);
       mixInputs.push('[voice]');
     }
 

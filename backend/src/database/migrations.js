@@ -232,7 +232,7 @@ const runMigrations = () => {
   safeAlter(`ALTER TABLE reels ADD COLUMN scenes_json TEXT`);
   safeAlter(`ALTER TABLE reels ADD COLUMN render_progress INTEGER DEFAULT 0`);
   safeAlter(`ALTER TABLE reels ADD COLUMN duration INTEGER DEFAULT 10`);
-  safeAlter(`ALTER TABLE reels ADD COLUMN bg_type TEXT DEFAULT 'pixabay'`);
+  safeAlter(`ALTER TABLE reels ADD COLUMN bg_type TEXT DEFAULT 'none'`);
   safeAlter(`ALTER TABLE reels ADD COLUMN bg_image_path TEXT`);
 
   safeAlter(`ALTER TABLE clicks ADD COLUMN source_category TEXT`);

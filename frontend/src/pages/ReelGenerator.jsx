@@ -79,7 +79,7 @@ export default function ReelGenerator() {
         setMusicTracks(musicRes.data || []);
 
         // Fetch articles
-        const articlesRes = await axios.get(`${API_URL}/admin/articles?limit=50`, { headers }).catch(() => ({ data: { articles: [] } }));
+        const articlesRes = await axios.get(`${API_URL}/reels/available-articles`, { headers }).catch(() => ({ data: { articles: [] } }));
         setArticles(articlesRes.data?.articles || []);
         if (articlesRes.data?.articles?.length > 0) {
           setSelectedArticleId(articlesRes.data.articles[0].id);
@@ -176,6 +176,25 @@ export default function ReelGenerator() {
     };
   }, [user?.id]);
 
+  const handleFetchRandomArticle = async () => {
+    const token = localStorage.getItem('token');
+    const loadToast = toast.loading('Fetching random story from website...');
+    try {
+      const res = await axios.get(`${API_URL}/reels/random-website-article`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data?.success && res.data?.article) {
+        setStoryContent(res.data.article.content || res.data.article.title);
+        setActiveTab('custom');
+        toast.success('Random story loaded!', { id: loadToast });
+      } else {
+        toast.error(res.data?.error || 'Failed to fetch article', { id: loadToast });
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to fetch article', { id: loadToast });
+    }
+  };
+
   const handleGenerate = async (e) => {
     e.preventDefault();
     if (activeTab === 'custom' && !storyContent.trim()) {
@@ -208,7 +227,7 @@ export default function ReelGenerator() {
         customization,
         duration: parseInt(duration, 10),
         category: 'all',
-        bgType: 'pixabay',
+        bgType: 'none',
         customImagePath: null,
         storyContent: activeTab === 'custom' ? storyContent : null,
         articleId: activeTab === 'article' ? selectedArticleId : null
@@ -318,7 +337,16 @@ export default function ReelGenerator() {
                       />
                     </div>
                     <div>
-                      <label htmlFor="storyContent" className="block text-sm font-semibold text-gray-400 mb-1">Story Content Script (Required)</label>
+                      <div className="flex justify-between items-center mb-1">
+                        <label htmlFor="storyContent" className="block text-sm font-semibold text-gray-400">Story Content Script (Required)</label>
+                        <button 
+                          type="button"
+                          onClick={handleFetchRandomArticle}
+                          className="px-3 py-1 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-xs font-bold hover:bg-purple-600/30 transition-all flex items-center gap-1"
+                        >
+                          ⚡ Auto Fetch Story
+                        </button>
+                      </div>
                       <textarea
                         id="storyContent"
                         value={storyContent}

@@ -32,7 +32,29 @@ const PRESETS = {
   emerald: { label: 'Emerald City', nameColor: '#34d399', textColor: '#ecfdf5', highlight: '#10b981', bg: '#064e3b' },
   ruby: { label: 'Ruby Crimson', nameColor: '#fb7185', textColor: '#fff1f2', highlight: '#e11d48', bg: '#4c0519' },
   amethyst: { label: 'Amethyst', nameColor: '#d8b4fe', textColor: '#faf5ff', highlight: '#a855f7', bg: '#3b0764' },
-  slate: { label: 'Slate Grey', nameColor: '#cbd5e1', textColor: '#f1f5f9', highlight: '#64748b', bg: '#0f172a' }
+  slate: { label: 'Slate Grey', nameColor: '#cbd5e1', textColor: '#f1f5f9', highlight: '#64748b', bg: '#0f172a' },
+  sakura: { label: '🌸 Sakura Whispers', nameColor: '#fda4af', textColor: '#fff1f2', highlight: '#f43f5e', bg: '#4c0519' },
+  matcha: { label: '🍵 Matcha Vibe', nameColor: '#86efac', textColor: '#f0fdf4', highlight: '#15803d', bg: '#062f17' },
+  citrus: { label: '🍊 Citrus Punch', nameColor: '#fdba74', textColor: '#fff7ed', highlight: '#ea580c', bg: '#431407' },
+  icecastle: { label: '💎 Ice Castle', nameColor: '#67e8f9', textColor: '#ecfeff', highlight: '#0891b2', bg: '#083344' },
+  choco: { label: '🍫 Midnight Choco', nameColor: '#d97706', textColor: '#fef3c7', highlight: '#b45309', bg: '#271b13' },
+  mirage: { label: '🌌 Sunset Mirage', nameColor: '#f472b6', textColor: '#fff1f2', highlight: '#db2777', bg: '#311042' },
+  phantom: { label: '🎭 Phantom Opera', nameColor: '#fca5a5', textColor: '#fef2f2', highlight: '#991b1b', bg: '#180404' },
+  sage: { label: '🌾 Sage Wisdom', nameColor: '#a3e635', textColor: '#f7fee7', highlight: '#4d7c0f', bg: '#14532d' },
+  cosmicneon: { label: '💫 Cosmic Neon', nameColor: '#38bdf8', textColor: '#f0f9ff', highlight: '#0284c7', bg: '#090d16' },
+  autumn: { label: '🍂 Autumn Leaves', nameColor: '#fdba74', textColor: '#fff7ed', highlight: '#c2410c', bg: '#3c1004' },
+  deepocean: { label: '🌊 Deep Ocean', nameColor: '#38bdf8', textColor: '#f0f9ff', highlight: '#0284c7', bg: '#041d24' },
+  pasteldreams: { label: '🎨 Pastel Dreams', nameColor: '#475569', textColor: '#1e293b', highlight: '#cbd5e1', bg: '#f1f5f9' },
+  lightning: { label: '⚡ Lightning Storm', nameColor: '#c084fc', textColor: '#faf5ff', highlight: '#7e22ce', bg: '#180828' },
+  sahara: { label: '🏜️ Sahara Sun', nameColor: '#fbbf24', textColor: '#fffbeb', highlight: '#d97706', bg: '#451a03' },
+  noir: { label: '🖤 Noir Detective', nameColor: '#94a3b8', textColor: '#f1f5f9', highlight: '#334155', bg: '#090d16' },
+  emeraldoasis: { label: '🌿 Emerald Oasis', nameColor: '#a7f3d0', textColor: '#ecfdf5', highlight: '#047857', bg: '#022c22' },
+  mystic: { label: '🔮 Mystic Velvet', nameColor: '#e9d5ff', textColor: '#faf5ff', highlight: '#7e22ce', bg: '#2e1065' },
+  espresso: { label: '☕ Espresso Shot', nameColor: '#f59e0b', textColor: '#fef3c7', highlight: '#b45309', bg: '#1c1917' },
+  candydream: { label: '🎈 Candy Dream', nameColor: '#f472b6', textColor: '#fff', highlight: '#db2777', bg: '#581c87' },
+  polar: { label: '🧊 Polar Glare', nameColor: '#38bdf8', textColor: '#f0f9ff', highlight: '#0284c7', bg: '#0f172a' },
+  lava: { label: '🌋 Lava Flow', nameColor: '#f87171', textColor: '#fee2e2', highlight: '#dc2626', bg: '#450a0a' },
+  goldenfields: { label: '🌾 Golden Fields', nameColor: '#fbbf24', textColor: '#fffbeb', highlight: '#d97706', bg: '#451a03' }
 };
 
 const FONTS = [
@@ -41,6 +63,93 @@ const FONTS = [
   'Fira Sans', 'Quicksand', 'Barlow', 'Mulish', 'Inconsolata', 'Anton', 'Josefin Sans', 'Dancing Script', 
   'Pacifico', 'Caveat', 'Righteous', 'Creepster', 'Bangers', 'Times New Roman', 'Arial', 'Courier New'
 ];
+
+const BG_PRESETS = [
+  { name: 'Midnight Blue', type: 'Gradient', color: '#0f172a', color2: '#1e1b4b' },
+  { name: 'Reddit Dark Red', type: 'Solid', color: '#450a0a', color2: '#1a1a2e' },
+  { name: 'Obsidian Black', type: 'Solid', color: '#000000', color2: '#111827' },
+  { name: 'Luxury Gold Grey', type: 'Solid', color: '#3f3f46', color2: '#1a1a2e' },
+  { name: 'Cyberpunk Violet', type: 'Gradient', color: '#0f172a', color2: '#312e81' },
+  { name: 'Minimalist Slate', type: 'Solid', color: '#f8fafc', color2: '#e2e8f0' },
+  { name: 'Deep Forest Green', type: 'Gradient', color: '#052e16', color2: '#064e3b' },
+  { name: 'Neon Synth Pink', type: 'Gradient', color: '#170f1a', color2: '#4a044e' },
+  { name: 'Vintage Sepia Yellow', type: 'Solid', color: '#fef3c7', color2: '#fde68a' },
+  { name: 'The Abyss Dark', type: 'Solid', color: '#020617', color2: '#0f172a' },
+  { name: 'Royal Velvet Purple', type: 'Gradient', color: '#2e1065', color2: '#4c1d95' },
+  { name: 'Sakura Blush Rose', type: 'Gradient', color: '#4c0519', color2: '#1e000a' },
+  { name: 'Matcha Calm Green', type: 'Solid', color: '#062f17', color2: '#1a1a2e' },
+  { name: 'Citrus Sun Orange', type: 'Gradient', color: '#431407', color2: '#7c2d12' },
+  { name: 'Cyan Ice Glare', type: 'Gradient', color: '#083344', color2: '#164e63' },
+  { name: 'Chocolate Warmth', type: 'Solid', color: '#271b13', color2: '#1a1a2e' },
+  { name: 'Sunset Dream Pink', type: 'Gradient', color: '#311042', color2: '#701a75' },
+  { name: 'Phantom Crimson', type: 'Gradient', color: '#180404', color2: '#450a0a' },
+  { name: 'Sage Olive Green', type: 'Solid', color: '#14532d', color2: '#1a1a2e' },
+  { name: 'Cosmic Sky Indigo', type: 'Gradient', color: '#090d16', color2: '#1e1b4b' },
+  { name: 'Autumn Maple Orange', type: 'Gradient', color: '#3c1004', color2: '#7c2d12' },
+  { name: 'Teal Deep Sea', type: 'Gradient', color: '#041d24', color2: '#083344' },
+  { name: 'Pastel Slate Grey', type: 'Solid', color: '#f1f5f9', color2: '#e2e8f0' },
+  { name: 'Storm Electric Violet', type: 'Gradient', color: '#180828', color2: '#3b0764' },
+  { name: 'Desert Amber Sand', type: 'Solid', color: '#451a03', color2: '#1a1a2e' },
+  { name: 'Noir Charcoal Grey', type: 'Gradient', color: '#090d16', color2: '#1e293b' },
+  { name: 'Mint Choco Teal', type: 'Solid', color: '#064e3b', color2: '#1a1a2e' },
+  { name: 'Plum Grape Wine', type: 'Gradient', color: '#2d002d', color2: '#4a004a' },
+  { name: 'Candy Floss Pink', type: 'Gradient', color: '#3f0c3f', color2: '#830c4f' },
+  { name: 'Polar Blue Ice', type: 'Solid', color: '#0f172a', color2: '#0284c7' },
+  { name: 'Volcanic Ash Red', type: 'Gradient', color: '#2b0909', color2: '#5f0f0f' },
+  { name: 'Rustic Wheat Gold', type: 'Solid', color: '#3a2002', color2: '#6b3e04' }
+];
+
+const HIGHLIGHT_PRESETS = [
+  { name: 'Yellow / White', highlight: '#eab308', text: '#ffffff' },
+  { name: 'Pink / White', highlight: '#ec4899', text: '#ffffff' },
+  { name: 'Cyan / White', highlight: '#06b6d4', text: '#ffffff' },
+  { name: 'Lime / White', highlight: '#84cc16', text: '#ffffff' },
+  { name: 'Violet / White', highlight: '#8b5cf6', text: '#ffffff' },
+  { name: 'Orange / White', highlight: '#f97316', text: '#ffffff' },
+  { name: 'Red / White', highlight: '#ef4444', text: '#ffffff' },
+  { name: 'Emerald / White', highlight: '#10b981', text: '#ffffff' },
+  { name: 'Gold / Black', highlight: '#fbbf24', text: '#000000' },
+  { name: 'Cyan / Black', highlight: '#22d3ee', text: '#000000' },
+  { name: 'Rose / Black', highlight: '#f472b6', text: '#000000' },
+  { name: 'Lime / Black', highlight: '#a3e635', text: '#000000' },
+  { name: 'Teal / White', highlight: '#0d9488', text: '#ffffff' },
+  { name: 'Amber / White', highlight: '#f59e0b', text: '#ffffff' },
+  { name: 'Blue / White', highlight: '#3b82f6', text: '#ffffff' },
+  { name: 'Sky / White', highlight: '#0ea5e9', text: '#ffffff' },
+  { name: 'Coral / White', highlight: '#f87171', text: '#ffffff' },
+  { name: 'Orchid / White', highlight: '#da70d6', text: '#ffffff' },
+  { name: 'Hot Pink / White', highlight: '#ff69b4', text: '#ffffff' },
+  { name: 'Gold / White', highlight: '#ffd700', text: '#ffffff' },
+  { name: 'Mint / White', highlight: '#34d399', text: '#ffffff' },
+  { name: 'Cyber / White', highlight: '#ff007f', text: '#ffffff' },
+  { name: 'Red / Yellow', highlight: '#dc2626', text: '#facc15' },
+  { name: 'Navy / Cyan', highlight: '#1e3a8a', text: '#22d3ee' },
+  { name: 'Crimson / Rose', highlight: '#991b1b', text: '#fda4af' },
+  { name: 'Purple / Lavender', highlight: '#581c87', text: '#e9d5ff' },
+  { name: 'Forest / Mint', highlight: '#14532d', text: '#a7f3d0' },
+  { name: 'Slate / Silver', highlight: '#334155', text: '#cbd5e1' },
+  { name: 'Chocolate / Cream', highlight: '#78350f', text: '#fef3c7' },
+  { name: 'Midnight / Gold', highlight: '#0f172a', text: '#fbbf24' },
+  { name: 'Lava / Orange', highlight: '#450a0a', text: '#fdba74' },
+  { name: 'Sunset / Amber', highlight: '#7c2d12', text: '#fbbf24' }
+];
+
+
+
+const PREMIUM_CARD_COLORS = [
+  '#000000', '#0a0a0a', '#111111', '#171717', '#1a1a2e', '#1e1e24', '#0d0d18', '#141414', '#1f1f1f', '#242424',
+  '#0b132b', '#1c2541', '#0f172a', '#1e293b', '#001233', '#023e8a', '#03045e', '#001d3d', '#14213d', '#000814',
+  '#240046', '#3c096c', '#10002b', '#2a003f', '#310020', '#3b0000', '#4a0404', '#2d0a0a', '#3f0f1d', '#5a0001',
+  '#1b262c', '#0f2027', '#112211', '#14281d', '#0d1b2a', '#222831', '#393e46', '#1a1c20', '#2d333b', '#22272e',
+  '#2b2b2b', '#333333', '#3a3a3a', '#444444', '#4b5563', '#374151', '#475569', '#3f3f46', '#52525b', '#2c2c2c',
+  '#ffffff', '#f8fafc', '#f1f5f9', '#f3f4f6', '#fafafa', '#fff5f5', '#fffaf0', '#f0fdf4', '#f0f9ff', '#f5f3ff'
+];
+
+const hexToRgb = (hex) => {
+  let c = (hex || '#1a1a2e').substring(1);
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  return `${parseInt(c.substring(0, 2), 16) || 26}, ${parseInt(c.substring(2, 4), 16) || 26}, ${parseInt(c.substring(4, 6), 16) || 46}`;
+};
 
 export default function SMWorkspace({ setTab }) {
   const [activeTab, setActiveTab] = useState('profile');
@@ -60,7 +169,7 @@ export default function SMWorkspace({ setTab }) {
     content: DEFAULT_STORY
   });
   const [bg, setBg] = useState({
-    type: 'Solid', color: '#0d0d18', color2: '#1a1a2e', media: '', mediaType: '',
+    type: 'Solid', color: '#0d0d18', color2: '#1a1a2e', cardColor: '#1a1a2e', media: '', mediaType: '',
     radius: 20, padding: 24, alpha: 100, showProfile: true
   });
   const [footer, setFooter] = useState({
@@ -143,7 +252,7 @@ export default function SMWorkspace({ setTab }) {
       font: 'Inter', size: 18, color: '#a78bfa', showBg: false
     });
     setBg({
-      type: 'Solid', color: '#0d0d18', color2: '#1a1a2e', media: '',
+      type: 'Solid', color: '#0d0d18', color2: '#1a1a2e', cardColor: '#1a1a2e', media: '',
       radius: 20, padding: 24, alpha: 100, showProfile: true
     });
     setFooter({
@@ -174,7 +283,7 @@ export default function SMWorkspace({ setTab }) {
     setPreset(k);
     setProfile(s => ({ ...s, color: p.nameColor }));
     setText(s => ({ ...s, color: p.textColor, highlight: p.highlight }));
-    setBg(s => ({ ...s, color: p.bg }));
+    setBg(s => ({ ...s, color: p.bg, cardColor: '#1a1a2e' }));
   };
 
   const openPicker = (target, currentVal) => setColorPicker({ target, val: currentVal });
@@ -184,7 +293,8 @@ export default function SMWorkspace({ setTab }) {
     else if (t === 'textColor') setText({ ...text, color: hex });
     else if (t === 'highlight') setText({ ...text, highlight: hex });
     else if (t === 'bgColor') setBg({ ...bg, color: hex });
-    else if (t === 'bgCard') setBg({ ...bg, color2: hex });
+    else if (t === 'bgColor2') setBg({ ...bg, color2: hex });
+    else if (t === 'bgCard') setBg({ ...bg, cardColor: hex });
     else if (t === 'footerColor') setFooter({ ...footer, color: hex });
     else if (t === 'footerBg') setFooter({ ...footer, bgColor: hex });
   };
@@ -264,12 +374,6 @@ export default function SMWorkspace({ setTab }) {
           
           {activeTab === 'profile' && (
             <div>
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Template Preset</div>
-                <select value={preset} onChange={e => applyPreset(e.target.value)} style={{ width: '100%', padding: 10, background: '#0d0d18', border: '1px solid #2a2a3e', borderRadius: 8, color: '#eee' }}>
-                  {Object.entries(PRESETS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </select>
-              </div>
               <div style={{ background: '#0d0d18', padding: 16, borderRadius: 12, border: '1px solid #1e1e2e', marginBottom: 20 }}>
                 <InputRow label="Avatar">
                   <label style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #2a2a3e', background: '#1a1a2e', color: '#aaa', fontSize: 12, cursor: 'pointer' }}>
@@ -303,6 +407,37 @@ export default function SMWorkspace({ setTab }) {
           {activeTab === 'text' && (
             <div>
               <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Global Theme Presets</div>
+                <div style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8,
+                  maxHeight: 180, overflowY: 'auto', background: '#0d0d18',
+                  padding: 10, borderRadius: 10, border: '1px solid #1e1e2e', marginBottom: 16
+                }}>
+                  {Object.entries(PRESETS).map(([k, v]) => {
+                    const isSelected = preset === k;
+                    return (
+                      <button
+                        key={k}
+                        onClick={() => { setPreset(k); applyPreset(k); }}
+                        title={v.label}
+                        style={{
+                          height: 42, borderRadius: 8,
+                          border: isSelected ? '2px solid #7c3aed' : '1px solid #2a2a3e',
+                          background: `linear-gradient(135deg, ${v.bg} 40%, ${v.highlight} 100%)`,
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          padding: 4, transition: 'all 0.2s',
+                          transform: isSelected ? 'scale(1.05)' : 'none'
+                        }}
+                      >
+                        <span style={{ fontSize: 9, fontWeight: 'bold', color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.8)', textAlign: 'center', lineHeight: 1.1 }}>
+                          {v.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: '#e8e8f0' }}>Story Content</div>
                   <button 
@@ -324,7 +459,7 @@ export default function SMWorkspace({ setTab }) {
                 />
                 <div style={{ fontSize: 11, color: '#666', marginTop: 6 }}>Use &lt;highlight&gt;text&lt;/highlight&gt; to emphasize specific words.</div>
               </div>
-              <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+              <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
                 <div style={{ flex: 1, background: '#0d0d18', padding: 12, borderRadius: 10, border: '1px solid #1e1e2e' }}>
                   <div style={{ fontSize: 11, color: '#888', marginBottom: 8 }}>Highlight Color</div>
                   <ColorBtn color={text.highlight} onClick={() => openPicker('highlight', text.highlight)} />
@@ -332,6 +467,60 @@ export default function SMWorkspace({ setTab }) {
                 <div style={{ flex: 1, background: '#0d0d18', padding: 12, borderRadius: 10, border: '1px solid #1e1e2e' }}>
                   <div style={{ fontSize: 11, color: '#888', marginBottom: 8 }}>Text Color</div>
                   <ColorBtn color={text.color} onClick={() => openPicker('textColor', text.color)} />
+                </div>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Highlight Preset Styles</div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: 8,
+                  maxHeight: 150,
+                  overflowY: 'auto',
+                  background: '#0d0d18',
+                  padding: 10,
+                  borderRadius: 10,
+                  border: '1px solid #1e1e2e',
+                  marginBottom: 16
+                }}>
+                  {HIGHLIGHT_PRESETS.map((p, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setText(s => ({ ...s, color: p.text, highlight: p.highlight }))}
+                      title={p.name}
+                      style={{
+                        height: 42,
+                        borderRadius: 8,
+                        border: '1px solid #2a2a3e',
+                        background: `linear-gradient(135deg, ${p.highlight} 50%, ${p.text} 50%)`,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 4,
+                        transition: 'transform 0.2s, border-color 0.2s'
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                        e.currentTarget.style.borderColor = '#7c3aed';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.borderColor = '#2a2a3e';
+                      }}
+                    >
+                      <span style={{
+                        fontSize: 9,
+                        fontWeight: 'bold',
+                        color: '#fff',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                        textAlign: 'center',
+                        lineHeight: 1.1
+                      }}>
+                        {p.name}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
               <InputRow label="Font Family">
@@ -359,6 +548,63 @@ export default function SMWorkspace({ setTab }) {
 
           {activeTab === 'bg' && (
             <div>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Background Style Preset</div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: 8,
+                  maxHeight: 160,
+                  overflowY: 'auto',
+                  background: '#0d0d18',
+                  padding: 10,
+                  borderRadius: 10,
+                  border: '1px solid #1e1e2e',
+                  marginBottom: 16
+                }}>
+                  {BG_PRESETS.map((p, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setBg(s => ({ ...s, type: p.type, color: p.color, color2: p.color2 }))}
+                      title={p.name}
+                      style={{
+                        height: 42,
+                        borderRadius: 8,
+                        border: '1px solid #2a2a3e',
+                        background: p.type === 'Gradient' ? `linear-gradient(135deg, ${p.color}, ${p.color2})` : p.color,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 4,
+                        position: 'relative',
+                        transition: 'transform 0.2s, border-color 0.2s'
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                        e.currentTarget.style.borderColor = '#7c3aed';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.borderColor = '#2a2a3e';
+                      }}
+                    >
+                      <span style={{
+                        fontSize: 9,
+                        fontWeight: 'bold',
+                        color: '#fff',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                        textAlign: 'center',
+                        lineHeight: 1.1,
+                        wordBreak: 'break-word'
+                      }}>
+                        {p.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <InputRow label="Style">
                 <select value={bg.type} onChange={e => setBg({...bg, type: e.target.value})} style={{ flex: 1, padding: 8, background: '#0d0d18', border: '1px solid #2a2a3e', borderRadius: 8, color: '#eee' }}>
                   <option>Solid</option><option>Gradient</option><option>Media</option>
@@ -369,16 +615,50 @@ export default function SMWorkspace({ setTab }) {
                   <div style={{ fontSize: 11, color: '#888', marginBottom: 8 }}>BG</div>
                   <ColorBtn color={bg.color} onClick={() => openPicker('bgColor', bg.color)} />
                 </div>
+                {bg.type === 'Gradient' && (
+                  <div style={{ flex: 1, background: '#0d0d18', padding: 12, borderRadius: 10, border: '1px solid #1e1e2e' }}>
+                    <div style={{ fontSize: 11, color: '#888', marginBottom: 8 }}>BG 2</div>
+                    <ColorBtn color={bg.color2} onClick={() => openPicker('bgColor2', bg.color2)} />
+                  </div>
+                )}
                 <div style={{ flex: 1, background: '#0d0d18', padding: 12, borderRadius: 10, border: '1px solid #1e1e2e' }}>
                   <div style={{ fontSize: 11, color: '#888', marginBottom: 8 }}>Card</div>
-                  <ColorBtn color={bg.color2} onClick={() => openPicker('bgCard', bg.color2)} />
+                  <ColorBtn color={bg.cardColor} onClick={() => openPicker('bgCard', bg.cardColor || '#1a1a2e')} />
+                </div>
+              </div>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Premium Card Colors</div>
+                <div style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 6,
+                  maxHeight: 140, overflowY: 'auto', background: '#0d0d18',
+                  padding: 12, borderRadius: 10, border: '1px solid #1e1e2e'
+                }}>
+                  {PREMIUM_CARD_COLORS.map((color, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => setBg({ ...bg, cardColor: color })}
+                      style={{
+                        backgroundColor: color,
+                        height: 24,
+                        borderRadius: 6,
+                        border: bg.cardColor === color ? '2px solid #a78bfa' : '1px solid #2a2a3e',
+                        cursor: 'pointer',
+                        transition: 'transform 0.1s',
+                        transform: bg.cardColor === color ? 'scale(1.15)' : 'none',
+                        boxShadow: bg.cardColor === color ? '0 0 8px rgba(167, 139, 250, 0.5)' : 'none'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = bg.cardColor === color ? 'scale(1.15)' : 'none'}
+                      title={color}
+                    />
+                  ))}
                 </div>
               </div>
               <div style={{ background: '#0d0d18', padding: 16, borderRadius: 12, border: '1px solid #1e1e2e', marginBottom: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ fontSize: 13, fontWeight: 600 }}>Media Link / Local File</div>
                   <button onClick={() => setBg({...bg, type: 'Media', media: `https://picsum.photos/1080/1920?random=${Date.now()}`})} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #7c3aed', background: '#2a1050', color: '#a78bfa', fontSize: 10, cursor: 'pointer', fontWeight: 600 }}>
-                    ✨ Pixabay Random
+                    ✨ Random Image
                   </button>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
@@ -462,7 +742,7 @@ export default function SMWorkspace({ setTab }) {
             
             {/* Overlay Box (Card) */}
             <div style={{
-              background: `rgba(26, 26, 46, ${bg.alpha / 100})`,
+              background: `rgba(${hexToRgb(bg.cardColor || '#1a1a2e')}, ${bg.alpha / 100})`,
               borderRadius: bg.radius,
               padding: bg.padding,
               width: '100%',

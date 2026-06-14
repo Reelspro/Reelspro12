@@ -13,9 +13,9 @@ const { fetchSceneImages, cleanupSceneImages } = require('../engine/imageEngine'
 const { generateShortToken, generateCampaignToken } = require('../engine/shortenerEngine');
 const { generateCardImage } = require('../engine/cardRenderer');
 
-const STORAGE_REELS = path.resolve(__dirname, '../../storage/reels');
-const STORAGE_THUMBS = path.resolve(__dirname, '../../storage/thumbnails');
-const TEMP_DIR = path.resolve(__dirname, '../../output/temp');
+const STORAGE_REELS = path.resolve(__dirname, '../../../output/reels');
+const STORAGE_THUMBS = path.resolve(__dirname, '../../../output/thumbnails');
+const TEMP_DIR = path.resolve(__dirname, '../../../output/temp');
 
 const ensureDirs = () => {
   [STORAGE_REELS, STORAGE_THUMBS, TEMP_DIR].forEach((d) => fs.mkdirSync(d, { recursive: true }));
@@ -50,22 +50,60 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
     const { renderTextStoryReel } = require('./textStoryRenderer');
     const destVideo = path.join(STORAGE_REELS, `${reelId}.mp4`);
     
-    // Fallback if themeData.textStory is not fully set
-    const textStoryData = themeData?.textStory || {
+    const ts = themeData?.textStory;
+    
+    // Resolve music path — if not provided in job, try to find by emotion/name
+    let resolvedMusicPath = musicPath;
+    if (!resolvedMusicPath || !fs.existsSync(resolvedMusicPath)) {
+      try {
+        const musicEngine = require('../services/music_engine');
+        const musicEmotion = ts?.musicTrack?.emotion || ts?.musicTrack?.name || 'emotional';
+        const musicResult = await musicEngine.matchSoundtrack(musicEmotion);
+        if (musicResult?.filePath && fs.existsSync(musicResult.filePath)) {
+          resolvedMusicPath = musicResult.filePath;
+          console.log('[RenderService] Resolved music from emotion:', musicEmotion, '->', resolvedMusicPath);
+        }
+      } catch (me) {
+        console.warn('[RenderService] Music fallback failed:', me.message);
+      }
+    }
+
+    const textStoryData = {
       scenes,
-      backgroundColor: '#FFE4E8',
-      patternId: 'pink_floral',
-      accentColor: '#B22222',
-      username: 'Sarah Storyteller',
-      footerText: 'Full Story In First Comment 👇'
+      screens: ts?.screens || [],
+      backgroundColor: ts?.background?.color || ts?.backgroundColor || '#FFE4E8',
+      patternId: ts?.background?.name || ts?.patternId || 'pink_floral',
+      accentColor: ts?.accentColor?.hex || ts?.accentColor || '#B22222',
+      textColor: ts?.background?.text || ts?.textColor || '#1A1A1A',
+      username: ts?.username || 'Sarah Storyteller',
+      avatarUrl: ts?.avatarUrl || null,
+      footerText: ts?.footerText || 'Full Story In First Comment 👇',
+      sfx: ts?.sfx || []
     };
+
+    // Generate voiceover for text stories if voice is selected
+    const voiceName = themeData?.voice || ts?.voice || 'Jenny';
+    let tsVoiceoverPath = null;
+    if (voiceName && voiceName !== 'none' && voiceName !== 'None (Silent)') {
+      try {
+        notify('Generating voice narration...', 20);
+        const rawVoice = await generateVoiceover(scenes.map(s => s.text), reelId, voiceName);
+        if (rawVoice) {
+          const voiceOut = path.join(TEMP_DIR, `${reelId}_ts_voice.mp3`);
+          tsVoiceoverPath = await fitVoiceoverToDuration(rawVoice, voiceOut, Math.ceil(totalReelDuration - 2));
+          console.log('[RenderService] Text story voiceover generated:', tsVoiceoverPath);
+        }
+      } catch (voiceErr) {
+        console.warn('[RenderService] Text story voice generation failed (continuing):', voiceErr.message);
+      }
+    }
 
     await renderTextStoryReel(
       textStoryData,
       destVideo,
       {
-        musicPath,
-        voiceoverPath: null, // text stories use background music only
+        musicPath: resolvedMusicPath,
+        voiceoverPath: tsVoiceoverPath,
         onProgress: (p) => notify(`Encoding ${Math.round(p)}%`, 30 + Math.round(p * 0.55))
       }
     );
@@ -76,7 +114,7 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
       const thumbAbs = await generateThumbnail(destVideo, reelId);
       const thumbDest = path.join(STORAGE_THUMBS, `${reelId}.jpg`);
       if (fs.existsSync(thumbAbs)) fs.copyFileSync(thumbAbs, thumbDest);
-      thumbRel = `/storage/thumbnails/${reelId}.jpg`;
+      thumbRel = `/output/thumbnails/${reelId}.jpg`;
     } catch (e) {
       console.warn('[RenderService] Thumbnail generation failed:', e.message);
     }
@@ -85,7 +123,7 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
     const campaignToken = generateCampaignToken();
 
     return {
-      filePath: `/storage/reels/${reelId}.mp4`,
+      filePath: `/output/reels/${reelId}.mp4`,
       thumbnailPath: thumbRel,
       caption: article.content ? `${article.content.substring(0, 150)}...\n\nFull Story In First Comment 👇` : '',
       shortToken,
@@ -120,7 +158,7 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
   // Step A: Get background images based on user preference
   const { getBackgroundImages } = require('../engine/imageEngine');
   const bgOptions = {
-    bgType: bgType || 'pixabay',
+    bgType: bgType || 'none',
     customImagePath: customImagePath || null,
   };
   let pixabayImages = [];
@@ -132,8 +170,35 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
     pixabayImages = new Array(scenes.length).fill(null);
   }
 
-  // Step B: Generate background-only image for each scene (which supports Solid, Gradient, and Image backgrounds)
+  // Step B: Generate background-only image or full card image for each scene
   const bgPaths = [];
+  const isCardStyle = !!(themeData?.storyMakerCustom);
+
+  // Resolve profile avatar if card style is active
+  if (isCardStyle && themeData?.profile?.avatar) {
+    const avatar = themeData.profile.avatar;
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      try {
+        const { downloadImage } = require('../engine/ffmpegRenderer');
+        const tempAvatar = path.join(TEMP_DIR, `${reelId}_avatar.png`);
+        const resolvedAvatarPath = await downloadImage(avatar, tempAvatar);
+        if (resolvedAvatarPath) {
+          themeData.profile.avatar = resolvedAvatarPath;
+          console.log('[RenderService] Avatar downloaded and resolved:', resolvedAvatarPath);
+        }
+      } catch (e) {
+        console.warn('[RenderService] Avatar download failed:', e.message);
+      }
+    } else {
+      // Check if it's a relative path in public/output folder
+      const rootDir = path.resolve(__dirname, '../../..');
+      const publicPath = path.join(rootDir, avatar.replace(/^\//, ''));
+      if (fs.existsSync(publicPath)) {
+        themeData.profile.avatar = publicPath;
+      }
+    }
+  }
+
   for (let i = 0; i < scenes.length; i++) {
     const bgPath = path.join(TEMP_DIR, `${reelId}_bg_${i}.png`);
     try {
@@ -147,12 +212,12 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
         totalScenes: scenes.length,
         backgroundImagePath: pixabayImages[i] || pixabayImages[0] || null,
         themeData,
-        bgOnly: true,
+        bgOnly: !isCardStyle,
       });
       bgPaths.push(bgPath);
-      console.log('[RenderService] Background frame generated:', i + 1, '/', scenes.length);
+      console.log('[RenderService] Frame generated:', i + 1, '/', scenes.length);
     } catch (e) {
-      console.warn('[RenderService] Background frame failed scene', i, e.message);
+      console.warn('[RenderService] Frame generation failed scene', i, e.message);
       bgPaths.push(pixabayImages[i] || null);
     }
   }
@@ -170,7 +235,7 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
         musicPath: processedMusicPath,
         voiceoverPath,
         theme: themeData || { name: theme },
-        isCardStyle: false,
+        isCardStyle,
         onProgress: (p) => notify(`Encoding ${Math.round(p)}%`, 45 + Math.round(p * 0.35)),
       })
     : await renderReel({
@@ -180,7 +245,7 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
         musicPath: processedMusicPath,
         voiceoverPath,
         theme: themeData || { name: theme },
-        isCardStyle: false,
+        isCardStyle,
         _localImageOverride: imagesToUse[0] || null,
         onProgress: (p) => notify(`Encoding ${Math.round(p)}%`, 45 + Math.round(p * 0.35)),
       });
@@ -194,7 +259,7 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
     const thumbAbs = await generateThumbnail(destVideo, reelId);
     const thumbDest = path.join(STORAGE_THUMBS, `${reelId}.jpg`);
     if (fs.existsSync(thumbAbs)) fs.copyFileSync(thumbAbs, thumbDest);
-    thumbRel = `/storage/thumbnails/${reelId}.jpg`;
+    thumbRel = `/output/thumbnails/${reelId}.jpg`;
   } catch (_) {}
 
   try { cleanupSceneImages(reelId, scenes.length); } catch (_) {}
@@ -224,7 +289,7 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
   const campaignToken = generateCampaignToken();
 
   return {
-    filePath: `/storage/reels/${reelId}.mp4`,
+    filePath: `/output/reels/${reelId}.mp4`,
     thumbnailPath: thumbRel,
     caption,
     shortToken,

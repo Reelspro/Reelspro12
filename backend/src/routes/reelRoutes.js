@@ -8,6 +8,7 @@ const {
   getUserCampaigns,
   deleteReel,
   getRandomWebsiteArticle,
+  getAvailableArticles,
 } = require('../controllers/reelController');
 const textStoryCtrl = require('../controllers/textStoryController');
 const { protect, requireApproved } = require('../middleware/authMiddleware');
@@ -17,6 +18,7 @@ const { generationLimiter } = require('../middleware/securityMiddleware');
 router.get('/campaigns', protect, requireApproved, getUserCampaigns);
 router.get('/my-reels', protect, requireApproved, getUserReels);
 router.get('/random-website-article', protect, requireApproved, getRandomWebsiteArticle);
+router.get('/available-articles', protect, requireApproved, getAvailableArticles);
 
 router.route('/')
   .get(protect, requireApproved, getUserReels);

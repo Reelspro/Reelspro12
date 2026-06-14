@@ -49,7 +49,7 @@ function decryptApiKey(text) {
   }
 }
 
-const PROVIDER_ORDER = ['groq', 'gemini', 'qwen', 'openrouter', 'huggingface'];
+const PROVIDER_ORDER = ['groq', 'gemini', 'kimi', 'qwen', 'openrouter', 'huggingface'];
 const ROTATION_PROVIDERS = ['openai', 'anthropic', 'gemini'];
 const unavailableProviders = new Map();
 let rotationIndex = 0;
@@ -189,6 +189,16 @@ async function callQwen(prompt, model = 'qwen-turbo', apiKey) {
   return { text: res.choices[0]?.message?.content, model, provider: 'qwen' };
 }
 
+async function callKimi(prompt, model = 'moonshot-v1-8k', apiKey) {
+  logger.info(`Calling Kimi using model: ${model || 'moonshot-v1-8k'}`);
+  const client = new OpenAI({ baseURL: 'https://api.moonshot.cn/v1', apiKey });
+  const res = await client.chat.completions.create({
+    model: model || 'moonshot-v1-8k',
+    messages: [{ role: 'user', content: prompt }],
+  });
+  return { text: res.choices[0]?.message?.content, model: model || 'moonshot-v1-8k', provider: 'kimi' };
+}
+
 function fallbackToTemplate(articleTitle, emotion = 'suspense') {
   logger.warn('Falling back to local template rendering.');
   const templates = {
@@ -306,6 +316,7 @@ async function generateScript(prompt, options = {}) {
           case 'anthropic': result = await callAnthropic(prompt, model, keyData.apiKey); break;
           case 'gemini': result = await callGemini(prompt, model, keyData.apiKey); break;
           case 'groq': result = await callGroq(prompt, model, keyData.apiKey); break;
+          case 'kimi': result = await callKimi(prompt, model, keyData.apiKey); break;
           case 'qwen': result = await callQwen(prompt, model, keyData.apiKey); break;
           case 'openrouter': result = await callOpenRouter(prompt, model, keyData.apiKey); break;
           case 'huggingface': result = await callHuggingFace(prompt, model, keyData.apiKey); break;
@@ -371,6 +382,7 @@ async function generateScript(prompt, options = {}) {
       switch (provider) {
         case 'groq': result = await callGroq(prompt, model, keyData.apiKey); break;
         case 'gemini': result = await callGemini(prompt, model, keyData.apiKey); break;
+        case 'kimi': result = await callKimi(prompt, model, keyData.apiKey); break;
         case 'qwen': result = await callQwen(prompt, model, keyData.apiKey); break;
         case 'openrouter': result = await callOpenRouter(prompt, model, keyData.apiKey); break;
         case 'huggingface': result = await callHuggingFace(prompt, model, keyData.apiKey); break;
@@ -402,6 +414,7 @@ module.exports = {
   callGroq,
   callGemini,
   callQwen,
+  callKimi,
   callOpenRouter,
   callHuggingFace,
   fallbackToTemplate,
