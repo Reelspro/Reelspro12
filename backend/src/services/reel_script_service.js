@@ -192,19 +192,21 @@ async function generateSuspenseScenes(articleTitle, articleContent, emotion, use
   const storyStyle = pickTextStoryStyle();
 
   const prompt = `You are a viral Facebook "A Text Story" writer.
-Create a suspenseful, emotional story based on this article for a short-form video reel.
+Create a highly suspenseful, emotional story based on this article for a short-form video reel.
 
 Article Title: ${articleTitle}
 Article Content: ${(articleContent || articleTitle).substring(0, 1200)}
 Category: ${emotion}
 
-Write a compelling 3-4 paragraph story in the FIRST PERSON ("I") perspective.
+Write a compelling 2-3 paragraph story in the FIRST PERSON ("I") perspective.
 Rules:
-- Start with a SHOCKING hook sentence in all caps or very dramatic.
-- Include 1-2 quotes (dialogue) using double quotes.
-- Build suspense. Add a cliffhanger midway.
-- End with a teaser — DO NOT reveal the full ending.
-- Keep total text under 400 words.
+- Make it extremely engaging, like a Reddit Story (e.g. "I recently got married. My husband has an adult son. I DO NOT HAVE CHILDREN...").
+- Start with a SHOCKING hook sentence.
+- Build intense suspense very quickly.
+- End abruptly on a CLIFFHANGER mid-thought or at the most suspenseful line so the reader is forced to check the comments for the full story.
+- Use ALL CAPS for the 1-2 most suspenseful/shocking sentences (these will be highlighted with a color background in the video).
+- Include 1 short quote if relevant.
+- Keep total text under 200 words. Make it punchy.
 - Tone: ${emotion}. Conversational, raw, emotional.
 
 Return ONLY valid JSON (no markdown):
@@ -215,7 +217,7 @@ Return ONLY valid JSON (no markdown):
     {"id":3,"type":"beat","text":"Scene 3 text","duration":4},
     {"id":4,"type":"cliffhanger","text":"Scene 4 text — ends with ...","duration":4}
   ],
-  "fullStoryText": "complete multi-paragraph story text with quotes included"
+  "fullStoryText": "The extremely suspenseful short story text with the ALL CAPS suspenseful sentence included."
 }`;
 
   const aiResult = await generateWithRotation(prompt, userId);

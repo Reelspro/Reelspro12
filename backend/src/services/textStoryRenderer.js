@@ -254,10 +254,21 @@ function wrapText(ctx, text, maxWidth) {
 /**
  * Draws a single text segment with wrapping. Returns next Y position.
  */
-function drawWrappedSegment(ctx, text, x, y, maxWidth, lineH) {
+function drawWrappedSegment(ctx, text, x, y, maxWidth, lineH, highlightColor) {
   const lines = wrapText(ctx, text, maxWidth);
   for (const line of lines) {
-    ctx.fillText(line, x, y);
+    if (highlightColor) {
+      const width = ctx.measureText(line).width;
+      ctx.save();
+      ctx.fillStyle = highlightColor;
+      // Add subtle border radius/padding for the highlight box
+      ctx.fillRect(x - 8, y - lineH * 0.72, width + 16, lineH * 0.95);
+      ctx.fillStyle = '#FFFFFF'; // White text on highlight
+      ctx.fillText(line, x, y);
+      ctx.restore();
+    } else {
+      ctx.fillText(line, x, y);
+    }
     y += lineH;
   }
   return y;
@@ -445,15 +456,17 @@ function renderStoryFrame(config) {
       continue;
     }
 
+    let highlight = null;
     if (style === 'accent' || style === 'quote') {
       ctx.font = `900 ${FONT_SIZE}px Arial`;
-      ctx.fillStyle = accentColor;
+      highlight = accentColor;
+      ctx.fillStyle = '#FFFFFF';
     } else {
       ctx.font = `900 ${FONT_SIZE}px Arial`;
       ctx.fillStyle = config.textColor || '#1A1A1A';
     }
 
-    y = drawWrappedSegment(ctx, seg.text || '', PAD, y, maxTextW, LINE_H);
+    y = drawWrappedSegment(ctx, seg.text || '', PAD, y, maxTextW, LINE_H, highlight);
 
     // Extra gap between segments (paragraph spacing)
     if (si < segments.length - 1 && segments[si + 1]?.style !== 'cta') {
