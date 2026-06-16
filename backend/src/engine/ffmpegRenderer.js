@@ -220,7 +220,24 @@ const renderReel = async ({ reelId, imageUrl, scenes, musicPath, voiceoverPath, 
       .complexFilter(filterComplex.join(';'))
       .outputOptions(outOptions)
       .videoCodec('libx264')
-      .on('progress', p => onProgress && onProgress(p.percent || 0))
+      .on('progress', p => {
+        if (onProgress) {
+          if (p.percent && p.percent > 0) {
+            onProgress(p.percent);
+          } else if (p.timemark) {
+            const parts = p.timemark.split(':');
+            if (parts.length === 3) {
+              const seconds = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2]);
+              const percent = (seconds / totalDuration) * 100;
+              onProgress(Math.min(percent, 100));
+            } else {
+              onProgress(0);
+            }
+          } else {
+            onProgress(0);
+          }
+        }
+      })
       .on('end', () => {
         if (localImagePath && !_localImageOverride && fs.existsSync(localImagePath)) fs.unlinkSync(localImagePath);
         resolve(outputPath);
@@ -337,7 +354,24 @@ const renderReelSlideshow = async ({ reelId, localImagePaths, scenes, musicPath,
       .complexFilter(filterComplex.join(';'))
       .outputOptions(outOptions)
       .videoCodec('libx264')
-      .on('progress', p => onProgress && onProgress(p.percent || 0))
+      .on('progress', p => {
+        if (onProgress) {
+          if (p.percent && p.percent > 0) {
+            onProgress(p.percent);
+          } else if (p.timemark) {
+            const parts = p.timemark.split(':');
+            if (parts.length === 3) {
+              const seconds = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2]);
+              const percent = (seconds / totalDuration) * 100;
+              onProgress(Math.min(percent, 100));
+            } else {
+              onProgress(0);
+            }
+          } else {
+            onProgress(0);
+          }
+        }
+      })
       .on('end', () => resolve(outputPath))
       .on('error', err => {
         console.error('[Slideshow] FFmpeg error:', err.message);
