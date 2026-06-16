@@ -260,7 +260,9 @@ Return ONLY the raw story text string. Do not use JSON. Do not wrap in quotes.`;
     if (aiResult.provider === 'template' || outputText.startsWith('{"scenes"')) {
       try {
         const parsed = JSON.parse(outputText);
-        if (parsed.scenes && Array.isArray(parsed.scenes)) {
+        if (parsed.fullStoryText) {
+          outputText = parsed.fullStoryText;
+        } else if (parsed.scenes && Array.isArray(parsed.scenes)) {
           outputText = parsed.scenes.map(s => s.text).join(' ');
         }
       } catch (e) {

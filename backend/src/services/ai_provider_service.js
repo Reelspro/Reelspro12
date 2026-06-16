@@ -199,74 +199,74 @@ async function callKimi(prompt, model = 'moonshot-v1-8k', apiKey) {
   return { text: res.choices[0]?.message?.content, model: model || 'moonshot-v1-8k', provider: 'kimi' };
 }
 
-function fallbackToTemplate(articleTitle, emotion = 'suspense') {
-  logger.warn('Falling back to local template rendering.');
-  const templates = {
-    horror: [
-      { id: 1, type: 'hook', text: 'Something dark was discovered...', duration: 2.0, start_time: 0, end_time: 2.0 },
-      { id: 2, type: 'beat', text: 'Nobody expected this.', duration: 2.0, start_time: 2.0, end_time: 4.0 },
-      { id: 3, type: 'beat', text: 'The truth is terrifying.', duration: 2.0, start_time: 4.0, end_time: 6.0 },
-      { id: 4, type: 'cliffhanger', text: 'This changed everything.', duration: 2.0, start_time: 6.0, end_time: 8.0 },
-      { id: 5, type: 'cta', text: 'Full Read Story Details In Comments', duration: 2.0, start_time: 8.0, end_time: 10.0 },
-    ],
-    mystery: [
-      { id: 1, type: 'hook', text: 'Something went missing...', duration: 2.0, start_time: 0, end_time: 2.0 },
-      { id: 2, type: 'beat', text: 'No one knows the truth.', duration: 2.0, start_time: 2.0, end_time: 4.0 },
-      { id: 3, type: 'beat', text: 'Clues point to one person.', duration: 2.0, start_time: 4.0, end_time: 6.0 },
-      { id: 4, type: 'cliffhanger', text: 'The secret is shocking.', duration: 2.0, start_time: 6.0, end_time: 8.0 },
-      { id: 5, type: 'cta', text: 'Full Read Story Details In Comments', duration: 2.0, start_time: 8.0, end_time: 10.0 },
-    ],
-    crime: [
-      { id: 1, type: 'hook', text: 'A crime no one saw coming.', duration: 2.0, start_time: 0, end_time: 2.0 },
-      { id: 2, type: 'beat', text: 'Police were shocked.', duration: 2.0, start_time: 2.0, end_time: 4.0 },
-      { id: 3, type: 'beat', text: 'Evidence points to insider.', duration: 2.0, start_time: 4.0, end_time: 6.0 },
-      { id: 4, type: 'cliffhanger', text: 'The arrest is coming.', duration: 2.0, start_time: 6.0, end_time: 8.0 },
-      { id: 5, type: 'cta', text: 'Full Read Story Details In Comments', duration: 2.0, start_time: 8.0, end_time: 10.0 },
-    ],
-    emotional: [
-      { id: 1, type: 'hook', text: 'A heartbreaking story...', duration: 2.0, start_time: 0, end_time: 2.0 },
-      { id: 2, type: 'beat', text: 'Family torn apart.', duration: 2.0, start_time: 2.0, end_time: 4.0 },
-      { id: 3, type: 'beat', text: 'No one could help.', duration: 2.0, start_time: 4.0, end_time: 6.0 },
-      { id: 4, type: 'cliffhanger', text: 'But then... this happened.', duration: 2.0, start_time: 6.0, end_time: 8.0 },
-      { id: 5, type: 'cta', text: 'Full Read Story Details In Comments', duration: 2.0, start_time: 8.0, end_time: 10.0 },
-    ],
-    shocking: [
-      { id: 1, type: 'hook', text: 'Nobody believed it was real.', duration: 2.0, start_time: 0, end_time: 2.0 },
-      { id: 2, type: 'beat', text: 'Video caught everything.', duration: 2.0, start_time: 2.0, end_time: 4.0 },
-      { id: 3, type: 'beat', text: 'The internet exploded.', duration: 2.0, start_time: 4.0, end_time: 6.0 },
-      { id: 4, type: 'cliffhanger', text: 'What happens next?', duration: 2.0, start_time: 6.0, end_time: 8.0 },
-      { id: 5, type: 'cta', text: 'Full Read Story Details In Comments', duration: 2.0, start_time: 8.0, end_time: 10.0 },
-    ],
-    suspense: [
-      { id: 1, type: 'hook', text: 'Something is very wrong.', duration: 2.0, start_time: 0, end_time: 2.0 },
-      { id: 2, type: 'beat', text: 'Time is running out.', duration: 2.0, start_time: 2.0, end_time: 4.0 },
-      { id: 3, type: 'beat', text: 'No escape in sight.', duration: 2.0, start_time: 4.0, end_time: 6.0 },
-      { id: 4, type: 'cliffhanger', text: 'The clock hits zero.', duration: 2.0, start_time: 6.0, end_time: 8.0 },
-      { id: 5, type: 'cta', text: 'Full Read Story Details In Comments', duration: 2.0, start_time: 8.0, end_time: 10.0 },
-    ],
-    funny: [
-      { id: 1, type: 'hook', text: 'This will make you laugh.', duration: 2.0, start_time: 0, end_time: 2.0 },
-      { id: 2, type: 'beat', text: 'Wait for it...', duration: 2.0, start_time: 2.0, end_time: 4.0 },
-      { id: 3, type: 'beat', text: 'Nobody saw this coming.', duration: 2.0, start_time: 4.0, end_time: 6.0 },
-      { id: 4, type: 'cliffhanger', text: 'The ending is everything.', duration: 2.0, start_time: 6.0, end_time: 8.0 },
-      { id: 5, type: 'cta', text: 'Full Read Story Details In Comments', duration: 2.0, start_time: 8.0, end_time: 10.0 },
-    ],
-    motivational: [
-      { id: 1, type: 'hook', text: 'From zero to everything.', duration: 2.0, start_time: 0, end_time: 2.0 },
-      { id: 2, type: 'beat', text: 'Nobody believed in him.', duration: 2.0, start_time: 2.0, end_time: 4.0 },
-      { id: 3, type: 'beat', text: 'Then one decision changed it.', duration: 2.0, start_time: 4.0, end_time: 6.0 },
-      { id: 4, type: 'cliffhanger', text: 'The result? Millions.', duration: 2.0, start_time: 6.0, end_time: 8.0 },
-      { id: 5, type: 'cta', text: 'Full Read Story Details In Comments', duration: 2.0, start_time: 8.0, end_time: 10.0 },
-    ],
-  };
-  const scenes = templates[emotion] || templates.suspense;
-  const title = (articleTitle || '').substring(0, 60);
-  const fullStoryText = scenes.map(s => s.text).join(' ');
+function fallbackToTemplate(promptText, emotion = 'suspense') {
+  logger.warn('Falling back to local template rendering (No API key). Using heuristic summarizer.');
+  
+  // Try to extract the article from the prompt
+  let articleText = '';
+  if (promptText && promptText.includes('Article:')) {
+    articleText = promptText.split('Article:')[1].split('Rules:')[0].trim();
+  } else if (promptText && promptText.includes('Article Content:')) {
+    articleText = promptText.split('Article Content:')[1].trim();
+  } else {
+    articleText = promptText || '';
+  }
+
+  // Clean and split into sentences
+  const sentences = articleText
+    .replace(/\n/g, ' ')
+    .split(/[.?!]\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 20);
+
+  // Pick 2-3 random sentences (or first few if random is too messy)
+  let middleText = '';
+  if (sentences.length > 0) {
+    // Pick the first readable sentence to establish context, and maybe one more
+    middleText = sentences[0] + '. ';
+    if (sentences.length > 2) middleText += sentences[2] + '. ';
+  } else {
+    middleText = "The details were completely hidden from the public. Nobody knew the actual truth until now. ";
+  }
+
+  const hooks = [
+    "I recently discovered something that changed everything.",
+    "Nobody believed me until this happened.",
+    "I have a secret that I can't keep anymore.",
+    "Something is very wrong, and I need to share it.",
+    "What I found out will absolutely shock you."
+  ];
+  
+  const cliffhangers = [
+    "When I saw the truth, my heart stopped...",
+    "What happened next is unbelievable...",
+    "You won't believe how this ends...",
+    "The final revelation changed my life forever...",
+    "I'm still shaking as I write this..."
+  ];
+
+  const randomHook = hooks[Math.floor(Math.random() * hooks.length)];
+  const randomCliffhanger = cliffhangers[Math.floor(Math.random() * cliffhangers.length)];
+
+  // Create the final text story
+  const fullStoryText = `${randomHook} ${middleText}${randomCliffhanger}`;
+
+  // Break it into scenes for the video generator
+  const scenes = [
+    { id: 1, type: 'hook', text: randomHook, duration: 2.5, start_time: 0, end_time: 2.5 },
+    { id: 2, type: 'beat', text: middleText.substring(0, 50) + '...', duration: 2.5, start_time: 2.5, end_time: 5.0 },
+    { id: 3, type: 'beat', text: "The truth was finally coming out.", duration: 2.0, start_time: 5.0, end_time: 7.0 },
+    { id: 4, type: 'cliffhanger', text: randomCliffhanger, duration: 2.5, start_time: 7.0, end_time: 9.5 },
+    { id: 5, type: 'cta', text: 'Full Read Story Details In Comments', duration: 2.0, start_time: 9.5, end_time: 11.5 }
+  ];
+
+  const title = articleText.substring(0, 60);
+
   return {
     text: JSON.stringify({ scenes, fullStoryText }),
     provider: 'template',
-    model: 'local',
-    caption: `${scenes[0].text}\n\n${title}\n\nFull Read Story Details In Comments\n\n#viral #fyp #trending #shocking #reels`,
+    model: 'local-heuristic',
+    caption: `${randomHook}\n\n${title}...\n\nFull Read Story Details In Comments\n\n#viral #fyp #trending #shocking #reels`,
     hashtags: ['#viral', '#fyp', '#trending', '#shocking', '#reels', '#story', '#suspense', '#mustwatch'],
   };
 }
@@ -401,7 +401,7 @@ async function generateScript(prompt, options = {}) {
   }
 
   // 4. Ultimate fallback to local template
-  return fallbackToTemplate(prompt.slice(0, 80));
+  return fallbackToTemplate(prompt);
 }
 
 async function generateWithRotation(prompt, userId) {
