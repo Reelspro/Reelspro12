@@ -208,6 +208,7 @@ Rules:
 - Include 1 short quote if relevant.
 - Keep total text under 200 words. Make it punchy.
 - Tone: ${emotion}. Conversational, raw, emotional.
+- CRITICAL: Return valid JSON ONLY. Escape any quotes inside text with \\". Escape newlines inside strings with \\n. Do not put literal newlines inside the JSON string value.
 
 Return ONLY valid JSON (no markdown):
 {
@@ -225,7 +226,9 @@ Return ONLY valid JSON (no markdown):
   try {
     const m = aiResult.text.match(/\{[\s\S]*\}/);
     if (m) parsed = JSON.parse(m[0]);
-  } catch (_) {}
+  } catch (err) {
+    console.error('[AI Parse Error]', err.message, 'Raw response:', aiResult.text);
+  }
 
   let scenes = parsed?.scenes;
   const fullStory = parsed?.fullStoryText || (articleContent || articleTitle).substring(0, 600);
