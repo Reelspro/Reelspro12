@@ -255,6 +255,19 @@ Return ONLY the raw story text string. Do not use JSON. Do not wrap in quotes.`;
 
     const aiResult = await generateWithRotation(prompt, req.user.id);
     let outputText = aiResult.text.trim();
+    
+    // If the AI failed and returned the JSON fallback template, format it as a readable story
+    if (aiResult.provider === 'template' || outputText.startsWith('{"scenes"')) {
+      try {
+        const parsed = JSON.parse(outputText);
+        if (parsed.scenes && Array.isArray(parsed.scenes)) {
+          outputText = parsed.scenes.map(s => s.text).join(' ');
+        }
+      } catch (e) {
+        outputText = "I recently experienced something crazy. The truth is shocking. I CANNOT BELIEVE IT...";
+      }
+    }
+
     // Clean up any potential markdown wrapping
     if (outputText.startsWith('```')) {
       outputText = outputText.replace(/```[a-z]*\n?/g, '').replace(/```/g, '').trim();

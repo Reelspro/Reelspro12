@@ -261,8 +261,9 @@ function fallbackToTemplate(articleTitle, emotion = 'suspense') {
   };
   const scenes = templates[emotion] || templates.suspense;
   const title = (articleTitle || '').substring(0, 60);
+  const fullStoryText = scenes.map(s => s.text).join(' ');
   return {
-    text: JSON.stringify({ scenes }),
+    text: JSON.stringify({ scenes, fullStoryText }),
     provider: 'template',
     model: 'local',
     caption: `${scenes[0].text}\n\n${title}\n\nFull Read Story Details In Comments\n\n#viral #fyp #trending #shocking #reels`,
