@@ -45,6 +45,7 @@ router.get('/music', (req, res) => {
 router.post('/text-story/generate', protect, requireApproved, generationLimiter, textStoryCtrl.generateTextStory);
 router.post('/text-story/preview', protect, requireApproved, textStoryCtrl.previewTextStory);
 router.get('/text-story/styles', protect, textStoryCtrl.getTextStoryStyles);
+router.post('/text-story/ai-rewrite', protect, requireApproved, textStoryCtrl.rewriteStory);
 
 router.get('/:id/status', protect, getReelStatus);
 router.get('/:id/download', protect, downloadReel);

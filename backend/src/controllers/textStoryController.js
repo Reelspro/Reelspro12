@@ -232,8 +232,44 @@ const getTextStoryStyles = (req, res) => {
   }
 };
 
+const { generateWithRotation } = require('../services/ai_provider_service');
+
+const rewriteStory = async (req, res) => {
+  try {
+    const { storyText } = req.body;
+    if (!storyText) return res.status(400).json({ error: 'Story text required' });
+
+    const prompt = `You are a viral Reddit Story writer for short-form video reels.
+Rewrite the following article into a highly engaging, FIRST PERSON ("I") suspenseful story.
+Article: ${storyText.substring(0, 1500)}
+
+Rules:
+- Make it extremely engaging, like a Reddit Story (e.g. "I recently got married. My husband has an adult son. I DO NOT HAVE CHILDREN...").
+- Start with a SHOCKING hook sentence.
+- End abruptly on a CLIFFHANGER mid-thought or at the most suspenseful line so the reader is forced to check the comments for the full story.
+- Use ALL CAPS for the 1-2 most suspenseful/shocking sentences.
+- Keep total text under 150 words. Make it punchy.
+- Do NOT use markdown, do NOT write "Introduction", do NOT include intro text. Just the story itself.
+
+Return ONLY the raw story text string. Do not use JSON. Do not wrap in quotes.`;
+
+    const aiResult = await generateWithRotation(prompt, req.user.id);
+    let outputText = aiResult.text.trim();
+    // Clean up any potential markdown wrapping
+    if (outputText.startsWith('```')) {
+      outputText = outputText.replace(/```[a-z]*\n?/g, '').replace(/```/g, '').trim();
+    }
+    
+    res.json({ success: true, text: outputText });
+  } catch (error) {
+    console.error('[TextStoryController] rewriteStory error:', error.message);
+    res.status(500).json({ error: 'Failed to rewrite story' });
+  }
+};
+
 module.exports = {
   generateTextStory,
   previewTextStory,
-  getTextStoryStyles
+  getTextStoryStyles,
+  rewriteStory
 };

@@ -187,7 +187,30 @@ export default function SMWorkspace({ setTab }) {
       });
       const data = await res.json();
       if (res.ok && data.success && data.article) {
-        setText(t => ({ ...t, content: data.article.content || data.article.title }));
+        toast.loading('AI is rewriting the story to be highly engaging...', { id: loadToast });
+        
+        // Rewrite the story to be suspenseful and engaging using the new AI endpoint
+        try {
+          const rewriteRes = await fetch(`${API_URL}/reels/text-story/ai-rewrite`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}` 
+            },
+            body: JSON.stringify({ storyText: data.article.content || data.article.title })
+          });
+          
+          const rewriteData = await rewriteRes.json();
+          if (rewriteRes.ok && rewriteData.success) {
+            setText(t => ({ ...t, content: rewriteData.text }));
+          } else {
+            setText(t => ({ ...t, content: data.article.content || data.article.title }));
+          }
+        } catch (e) {
+          console.error("Rewrite failed:", e);
+          setText(t => ({ ...t, content: data.article.content || data.article.title }));
+        }
+
         setSelectedArticleId(data.article.id);
         
         if (profile.name === 'Reddit Stories') {
@@ -198,7 +221,7 @@ export default function SMWorkspace({ setTab }) {
           }));
         }
 
-        toast.success('Random story loaded!', { id: loadToast });
+        toast.success('Random story loaded & rewritten!', { id: loadToast });
       } else {
         toast.error(data.error || 'Failed to fetch article', { id: loadToast });
       }

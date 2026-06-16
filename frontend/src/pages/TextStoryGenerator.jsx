@@ -105,6 +105,36 @@ export default function TextStoryGenerator() {
     }
   }, [musicTrack]);
 
+  const handleAIRewrite = async () => {
+    if (!storyText.trim() || storyText.length < 50) {
+      toast.error('Paste an article or story first to rewrite.');
+      return;
+    }
+    const loadToast = toast.loading('AI is rewriting the story into a suspenseful Reddit style...');
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${API_URL}/reels/text-story/ai-rewrite`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ storyText })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setStoryText(data.text);
+        toast.success('Story successfully rewritten!', { id: loadToast });
+      } else {
+        toast.error(data.error || 'Failed to rewrite story', { id: loadToast });
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Connection error', { id: loadToast });
+    }
+  };
+
   // Submit Handler
   const handleGenerate = async (e) => {
     e.preventDefault();
@@ -261,8 +291,17 @@ export default function TextStoryGenerator() {
                 placeholder="Paste your hook-filled story script here. The engine will split it into screens automatically and highlight shock keywords/ALL-CAPS words."
                 className="w-full bg-[#181829] border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-sans leading-relaxed"
               />
-              <div className="text-right text-xs text-gray-500 mt-1">
-                Words: {storyText.split(/\s+/).filter(Boolean).length} | Characters: {storyText.length}
+              <div className="flex justify-between items-center mt-2">
+                <button
+                  type="button"
+                  onClick={handleAIRewrite}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 hover:text-purple-300 rounded-lg text-xs font-bold border border-purple-500/30 transition-colors"
+                >
+                  <Wand2 size={14} /> ✨ AI Rewrite to Suspenseful Reddit Story
+                </button>
+                <div className="text-right text-xs text-gray-500">
+                  Words: {storyText.split(/\s+/).filter(Boolean).length} | Characters: {storyText.length}
+                </div>
               </div>
             </div>
 
