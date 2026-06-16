@@ -449,13 +449,12 @@ const getRandomWebsiteArticle = async (req, res) => {
   try {
     const { scrapeSourceUrl } = require('../services/scraper_service');
     
-    // Find active website source
-    const source = db.prepare('SELECT * FROM website_sources WHERE is_active = 1 LIMIT 1').get();
-    if (!source) {
+    // Find all active website sources
+    const activeSources = db.prepare('SELECT * FROM website_sources WHERE is_active = 1').all();
+    if (!activeSources || activeSources.length === 0) {
       return res.status(404).json({ error: 'No website source configured. Please add one in the Admin Panel.' });
     }
 
-    // Unescape html source URL
     const unescapeHtml = (str) => {
       if (typeof str !== 'string') return str;
       return str
@@ -466,31 +465,28 @@ const getRandomWebsiteArticle = async (req, res) => {
         .replace(/&#x2F;/g, '/')
         .replace(/&amp;/g, '&');
     };
-    
-    // Count articles for this source
-    const articlesCount = db.prepare('SELECT COUNT(*) as count FROM articles WHERE website_source_id = ?').get(source.id).count;
-    
-    if (articlesCount === 0) {
-      console.log(`[ReelController] No articles found for source ${source.id}. Scraping dynamically...`);
-      await scrapeSourceUrl(unescapeHtml(source.url), source.id, source.category_name);
-    }
 
-    // Retrieve random article for this source
+    // Attempt to get a truly random article from ANY active source
+    const sourceIds = activeSources.map(s => s.id).join(',');
     let article = db.prepare(`
       SELECT * FROM articles 
-      WHERE website_source_id = ? 
+      WHERE website_source_id IN (${sourceIds})
       AND content IS NOT NULL AND content != '' AND length(content) > 50
       ORDER BY RANDOM() LIMIT 1
-    `).get(source.id);
+    `).get();
 
-    // Fallback if still no article for this source
+    // If no articles found, pick a random source and scrape it
     if (!article) {
-      console.log('[ReelController] No articles found for source, trying database fallback...');
+      const randomSource = activeSources[Math.floor(Math.random() * activeSources.length)];
+      console.log(`[ReelController] No articles found. Scraping dynamically from ${randomSource.url}...`);
+      await scrapeSourceUrl(unescapeHtml(randomSource.url), randomSource.id, randomSource.category_name);
+      
       article = db.prepare(`
         SELECT * FROM articles 
-        WHERE content IS NOT NULL AND content != '' AND length(content) > 50
+        WHERE website_source_id = ? 
+        AND content IS NOT NULL AND content != '' AND length(content) > 50
         ORDER BY RANDOM() LIMIT 1
-      `).get();
+      `).get(randomSource.id);
     }
 
     if (!article) {
