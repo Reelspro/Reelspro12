@@ -76,7 +76,7 @@ const buildDrawtext = (scene, color) => {
     .replace(/\[/g, '\\[')
     .replace(/\]/g, '\\]');
 
-  const maxLineLength = 28;
+  const maxLineLength = 24;
   const words = text.split(' ');
   const lines = [];
   let currentLine = '';
@@ -90,9 +90,9 @@ const buildDrawtext = (scene, color) => {
   });
   if (currentLine.trim()) lines.push(currentLine.trim());
 
-  const lineHeight = 95;
+  const lineHeight = 90;
   const totalTextHeight = lines.length * lineHeight;
-  const baseY = `h-${totalTextHeight + 180}`;
+  const baseY = `h-${totalTextHeight + 500}`; // Lift text up above bottom UI (captions, username, etc.)
 
   // Detect font path cross-platform
   const os = require('os');
@@ -113,7 +113,7 @@ const buildDrawtext = (scene, color) => {
     return (
       `drawtext=text='${line}'` +
       `:fontcolor=0x${color}` +
-      `:fontsize=82` +
+      `:fontsize=76` +
       fontfile +
       `:x=(w-text_w)/2` +
       `:y=${yPos}` +
