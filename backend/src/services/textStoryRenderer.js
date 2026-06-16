@@ -383,13 +383,46 @@ function renderStoryFrame(config) {
   drawHeader(ctx, config);
 
   // 4. Body text segments
-  const FONT_SIZE = 44;
-  const LINE_H = Math.round(FONT_SIZE * 1.45);
+  let FONT_SIZE = 52;
+  let LINE_H = Math.round(FONT_SIZE * 1.45);
   const maxTextW = W - PAD * 2;
-  let y = BODY_TOP + FONT_SIZE; // first baseline
-
-  const accentColor = config.accentColor || '#B22222';
+  const availableHeight = BODY_BOTTOM - BODY_TOP - 40;
   const segments = config.textSegments || [];
+
+  // Dynamically shrink font size to fit text fully on page
+  while (FONT_SIZE > 24) {
+    let projectedH = FONT_SIZE;
+    for (let si = 0; si < segments.length; si++) {
+      const seg = segments[si];
+      if (seg.style === 'cta') {
+        projectedH += LINE_H * 2;
+        continue;
+      }
+      ctx.font = `900 ${FONT_SIZE}px Arial`;
+      const words = (seg.text || '').split(' ');
+      let line = '';
+      let lineCount = 1;
+      for (const word of words) {
+        const testLine = line ? line + ' ' + word : word;
+        if (ctx.measureText(testLine).width > maxTextW && line) {
+          lineCount++;
+          line = word;
+        } else {
+          line = testLine;
+        }
+      }
+      projectedH += lineCount * LINE_H;
+      if (si < segments.length - 1 && segments[si + 1]?.style !== 'cta') {
+        projectedH += Math.round(LINE_H * 0.35);
+      }
+    }
+    if (projectedH <= availableHeight) break;
+    FONT_SIZE -= 2;
+    LINE_H = Math.round(FONT_SIZE * 1.45);
+  }
+
+  let y = BODY_TOP + FONT_SIZE; // first baseline
+  const accentColor = config.accentColor || '#B22222';
 
   for (let si = 0; si < segments.length; si++) {
     const seg = segments[si];
