@@ -72,14 +72,22 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
       }
     }
 
+    // Resolve background - support both object form and flat form
+    const bgColor = ts?.background?.color || ts?.backgroundColor || null;
+    const bgPattern = ts?.background?.name || ts?.patternId || null;
+    const bgText = ts?.background?.text || ts?.textColor || null;
+    const resolvedAccent = ts?.accentColor?.hex || (typeof ts?.accentColor === 'string' ? ts.accentColor : null) || null;
+
+    console.log('[RenderService] Text story style —', { bgColor, bgPattern, resolvedAccent, bgText });
+
     const textStoryData = {
       scenes,
       screens: ts?.screens || [],
-      backgroundColor: ts?.background?.color || ts?.backgroundColor || '#FFE4E8',
-      patternId: ts?.background?.name || ts?.patternId || 'pink_floral',
-      accentColor: ts?.accentColor?.hex || ts?.accentColor || '#B22222',
-      textColor: ts?.background?.text || ts?.textColor || '#1A1A1A',
-      username: ts?.username || 'Sarah Storyteller',
+      backgroundColor: bgColor || '#0A1128',
+      patternId: bgPattern || 'dark_navy',
+      accentColor: resolvedAccent || '#8B5CF6',
+      textColor: bgText || '#FFFFFF',
+      username: ts?.username || 'Reddit Stories',
       avatarUrl: ts?.avatarUrl || null,
       footerText: ts?.footerText || 'Full Story In First Comment 👇',
       sfx: ts?.sfx || []

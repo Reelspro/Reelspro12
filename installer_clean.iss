@@ -13,7 +13,7 @@ DisableWelcomePage=no
 DisableDirPage=no
 
 [Files]
-Source: "dist-release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "ReelsPro-Setup-*.exe,ReelsPro.exe,*.yml,*.iss,build_clean_installer.js"
+Source: "dist-release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "ReelsPro-Setup-*.exe,*.yml,*.iss,build_clean_installer.js"
 
 [Icons]
 Name: "{group}\ReelsPro"; Filename: "{app}\start.bat"; IconFilename: "{sys}\cmd.exe"

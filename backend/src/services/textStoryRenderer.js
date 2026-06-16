@@ -400,17 +400,18 @@ function renderStoryFrame(config) {
   const availableHeight = BODY_BOTTOM - BODY_TOP - 40;
   const segments = config.textSegments || [];
 
-  // Dynamically shrink font size to fit text fully on page
-  while (FONT_SIZE > 24) {
-    let projectedH = FONT_SIZE;
+  // Helper: strip any raw <highlight> tags that weren't parsed
+  const cleanTag = (t) => t.replace(/<\/?highlight>/gi, '');
+
+  // Calculate total projected height for a given font size
+  function calcProjectedHeight(fs) {
+    const lh = Math.round(fs * 1.45);
+    let h = 0;
+    ctx.font = `900 ${fs}px Arial`;
     for (let si = 0; si < segments.length; si++) {
       const seg = segments[si];
-      if (seg.style === 'cta') {
-        projectedH += LINE_H * 2;
-        continue;
-      }
-      ctx.font = `900 ${FONT_SIZE}px Arial`;
-      const words = (seg.text || '').split(' ');
+      if (seg.style === 'cta') { h += lh * 2; continue; }
+      const words = (cleanTag(seg.text || '')).split(' ');
       let line = '';
       let lineCount = 1;
       for (const word of words) {
@@ -422,42 +423,54 @@ function renderStoryFrame(config) {
           line = testLine;
         }
       }
-      projectedH += lineCount * LINE_H;
+      h += lineCount * lh;
       if (si < segments.length - 1 && segments[si + 1]?.style !== 'cta') {
-        projectedH += Math.round(LINE_H * 0.35);
+        h += Math.round(lh * 0.35);
       }
     }
-    if (projectedH <= availableHeight) break;
-    FONT_SIZE -= 2;
-    LINE_H = Math.round(FONT_SIZE * 1.45);
+    return h;
   }
 
-  let y = BODY_TOP + FONT_SIZE; // first baseline
+  // Grow font to fill the space (up to 80px max)
+  while (FONT_SIZE < 78) {
+    if (calcProjectedHeight(FONT_SIZE + 2) > availableHeight) break;
+    FONT_SIZE += 2;
+  }
+  // Shrink font if it overflows
+  while (FONT_SIZE > 24 && calcProjectedHeight(FONT_SIZE) > availableHeight) {
+    FONT_SIZE -= 2;
+  }
+  LINE_H = Math.round(FONT_SIZE * 1.45);
+
+  // Calculate total text height for vertical centering
+  const totalTextH = calcProjectedHeight(FONT_SIZE);
+  const centerStart = BODY_TOP + Math.max(0, (availableHeight - totalTextH) / 2) + FONT_SIZE;
+
+  let y = centerStart;
   const accentColor = config.accentColor || '#B22222';
 
   for (let si = 0; si < segments.length; si++) {
     const seg = segments[si];
     const style = seg.style || 'normal';
     const isCTA = style === 'cta';
+    const rawText = cleanTag(seg.text || '');
 
     // Stop if we've hit the footer zone
     if (y > BODY_BOTTOM - FONT_SIZE) break;
 
     if (isCTA) {
-      // Right-aligned accent "Read More....."
       ctx.font = `900 40px Arial`;
       ctx.fillStyle = accentColor;
       ctx.textAlign = 'right';
-      // Place CTA 2 lines from bottom of body
       const ctaY = Math.max(y + LINE_H, BODY_BOTTOM - LINE_H);
-      ctx.fillText(seg.text || 'Read More.....', W - PAD, ctaY);
+      ctx.fillText(rawText || 'Read More.....', W - PAD, ctaY);
       ctx.textAlign = 'left';
       y = ctaY + LINE_H;
       continue;
     }
 
     let highlight = null;
-    if (style === 'accent' || style === 'quote') {
+    if (style === 'accent' || style === 'quote' || style === 'dialogue') {
       ctx.font = `900 ${FONT_SIZE}px Arial`;
       highlight = accentColor;
       ctx.fillStyle = '#FFFFFF';
@@ -466,7 +479,7 @@ function renderStoryFrame(config) {
       ctx.fillStyle = config.textColor || '#1A1A1A';
     }
 
-    y = drawWrappedSegment(ctx, seg.text || '', PAD, y, maxTextW, LINE_H, highlight);
+    y = drawWrappedSegment(ctx, rawText, PAD, y, maxTextW, LINE_H, highlight);
 
     // Extra gap between segments (paragraph spacing)
     if (si < segments.length - 1 && segments[si + 1]?.style !== 'cta') {

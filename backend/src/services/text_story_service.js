@@ -152,9 +152,23 @@ function splitParagraph(paragraph, maxWords) {
   return subParagraphs;
 }
 
-function splitIntoScreens(storyText, maxWordsPerScreen = 150) {
+function decodeHtmlEntities(text) {
+  if (!text) return text;
+  return text
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&apos;/g, "'");
+}
+
+function splitIntoScreens(storyText, maxWordsPerScreen = 60) {
   if (!storyText) return [];
-  const paragraphs = storyText.split(/\n+/).map(p => p.trim()).filter(Boolean);
+  // Decode HTML entities first so <highlight> tags work correctly
+  const cleanText = decodeHtmlEntities(storyText);
+  const paragraphs = cleanText.split(/\n+/).map(p => p.trim()).filter(Boolean);
   const screens = [];
   let currentScreenText = [];
   let currentWordCount = 0;
