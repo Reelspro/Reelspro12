@@ -171,15 +171,28 @@ const generateReel = async (req, res) => {
     let music = null;
     if (customization.musicEnabled !== false && customization.musicId !== 'none') {
       if (customization.musicId) {
-        const row = db.prepare('SELECT * FROM music_library WHERE id = ?').get(customization.musicId);
+        // musicId comes as integer from DB; cast to int for safe lookup
+        const row = db.prepare('SELECT * FROM music_library WHERE id = ?').get(parseInt(customization.musicId, 10));
         if (row && fs.existsSync(row.file_path)) {
           music = { filePath: row.file_path, filename: row.filename, emotion: row.category };
+          console.log(`[ReelController] Music selected by ID ${customization.musicId}: ${row.filename}`);
+        } else {
+          console.warn(`[ReelController] musicId ${customization.musicId} not found or file missing, using auto-match`);
         }
       }
       if (!music) {
-        music = await musicEngine.matchSoundtrack(emotion);
+        // matchSoundtrack returns a plain file path string — wrap it properly
+        const fallbackPath = musicEngine.matchSoundtrack(emotion);
+        if (fallbackPath && typeof fallbackPath === 'string' && fs.existsSync(fallbackPath)) {
+          const filename = require('path').basename(fallbackPath);
+          music = { filePath: fallbackPath, filename, emotion };
+          console.log(`[ReelController] Auto-matched music for emotion '${emotion}': ${filename}`);
+        } else if (fallbackPath && typeof fallbackPath === 'object' && fallbackPath.filePath) {
+          music = fallbackPath; // already an object
+        }
       }
     }
+    console.log(`[ReelController] Final music:`, music ? music.filename : 'NONE — no background music');
     const reelId = uuidv4();
     const shortLink = await shortenerService.createLink(reelId, req.user.id, article.url);
 

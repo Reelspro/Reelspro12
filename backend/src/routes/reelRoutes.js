@@ -26,7 +26,7 @@ router.route('/')
 router.post('/generate', protect, requireApproved, generationLimiter, generateReel);
 
 // Music library endpoint — list all available background tracks
-router.get('/music', protect, (req, res) => {
+router.get('/music', (req, res) => {
   try {
     const db = require('../config/db');
     const tracks = db.prepare(`

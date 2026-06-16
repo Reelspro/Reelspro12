@@ -104,7 +104,7 @@ const processMusic = (inputPath, outputPath, duration = 30) => {
       .audioFilters([
         `afade=t=in:ss=0:d=${fadeDuration}`, // Slow emotional fade in
         `afade=t=out:st=${Math.max(0, duration - fadeDuration)}:d=${fadeDuration}`, // Slow emotional fade out
-        'volume=0.3' // Soft background volume for emotional storytelling
+        'volume=0.7' // Soft background volume for emotional storytelling
       ])
       .save(outputPath)
       .on('end', () => {

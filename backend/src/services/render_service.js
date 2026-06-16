@@ -53,14 +53,17 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
     const ts = themeData?.textStory;
     
     // Resolve music path — if not provided in job, try to find by emotion/name
+    // NOTE: matchSoundtrack() returns a plain file-path string, not an object
     let resolvedMusicPath = musicPath;
     if (!resolvedMusicPath || !fs.existsSync(resolvedMusicPath)) {
       try {
         const musicEngine = require('../services/music_engine');
         const musicEmotion = ts?.musicTrack?.emotion || ts?.musicTrack?.name || 'emotional';
-        const musicResult = await musicEngine.matchSoundtrack(musicEmotion);
-        if (musicResult?.filePath && fs.existsSync(musicResult.filePath)) {
-          resolvedMusicPath = musicResult.filePath;
+        const musicResult = musicEngine.matchSoundtrack(musicEmotion);
+        // Handle both string (file path) and object with filePath property
+        const resolvedPath = typeof musicResult === 'string' ? musicResult : musicResult?.filePath;
+        if (resolvedPath && fs.existsSync(resolvedPath)) {
+          resolvedMusicPath = resolvedPath;
           console.log('[RenderService] Resolved music from emotion:', musicEmotion, '->', resolvedMusicPath);
         }
       } catch (me) {
@@ -137,10 +140,14 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
   if (musicPath && fs.existsSync(musicPath)) {
     const out = path.join(TEMP_DIR, `${reelId}_music.mp3`);
     try {
+      console.log(`[RenderService] Processing music: ${musicPath}`);
       processedMusicPath = await processMusic(musicPath, out, Math.ceil(totalReelDuration));
+      console.log(`[RenderService] Music processed OK -> ${processedMusicPath} (${(require('fs').statSync(processedMusicPath).size / 1024).toFixed(1)} KB)`);
     } catch (e) {
       console.warn('[RenderService] Music process failed:', e.message);
     }
+  } else {
+    console.warn(`[RenderService] No music — musicPath=${musicPath}, exists=${musicPath ? fs.existsSync(musicPath) : false}`);
   }
 
   let voiceoverPath = null;

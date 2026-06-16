@@ -202,7 +202,7 @@ const renderReel = async ({ reelId, imageUrl, scenes, musicPath, voiceoverPath, 
     // FIX: Safe audio handling — null music never crashes render
     if (hasMusic && hasVoice) {
       command = command.input(musicPath).input(voiceoverPath);
-      filterComplex.push('[1:a]volume=0.5[bgm];[2:a]volume=2.0[voice];[bgm][voice]amix=inputs=2:duration=first[a_out]');
+      filterComplex.push('[1:a]volume=0.8[bgm];[2:a]volume=2.0[voice];[bgm][voice]amix=inputs=2:duration=first[a_out]');
       outOptions.push('-map', '[a_out]', '-shortest');
     } else if (hasMusic) {
       command = command.input(musicPath);
@@ -319,7 +319,7 @@ const renderReelSlideshow = async ({ reelId, localImagePaths, scenes, musicPath,
 
     if (hasMusic && hasVoice) {
       command = command.input(musicPath).input(voiceoverPath);
-      filterComplex.push(`[${N}:a]volume=0.5[bgm];[${N + 1}:a]volume=2.0[voice];[bgm][voice]amix=inputs=2:duration=first[a_out]`);
+      filterComplex.push(`[${N}:a]volume=0.8[bgm];[${N + 1}:a]volume=2.0[voice];[bgm][voice]amix=inputs=2:duration=first[a_out]`);
       outOptions.push('-map', '[a_out]', '-shortest');
     } else if (hasMusic) {
       command = command.input(musicPath);
