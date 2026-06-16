@@ -13,9 +13,10 @@ const { fetchSceneImages, cleanupSceneImages } = require('../engine/imageEngine'
 const { generateShortToken, generateCampaignToken } = require('../engine/shortenerEngine');
 const { generateCardImage } = require('../engine/cardRenderer');
 
-const STORAGE_REELS = path.resolve(__dirname, '../../../output/reels');
-const STORAGE_THUMBS = path.resolve(__dirname, '../../../output/thumbnails');
-const TEMP_DIR = path.resolve(__dirname, '../../../output/temp');
+const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../..');
+const STORAGE_REELS = path.resolve(rootDir, 'output/reels');
+const STORAGE_THUMBS = path.resolve(rootDir, 'output/thumbnails');
+const TEMP_DIR = path.resolve(rootDir, 'output/temp');
 
 const ensureDirs = () => {
   [STORAGE_REELS, STORAGE_THUMBS, TEMP_DIR].forEach((d) => fs.mkdirSync(d, { recursive: true }));
@@ -197,8 +198,7 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
         console.warn('[RenderService] Avatar download failed:', e.message);
       }
     } else {
-      // Check if it's a relative path in public/output folder
-      const rootDir = path.resolve(__dirname, '../../..');
+      const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../..');
       const publicPath = path.join(rootDir, avatar.replace(/^\//, ''));
       if (fs.existsSync(publicPath)) {
         themeData.profile.avatar = publicPath;

@@ -344,7 +344,7 @@ const downloadReel = (req, res) => {
     }
 
     // Resolve absolute path — support both /output/ and legacy /storage/ prefixes
-    const rootDir = path.resolve(__dirname, '../../..');
+    const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../..');
     let absolutePath;
     if (reel.file_path.startsWith('/output')) {
       absolutePath = path.join(rootDir, reel.file_path.replace(/^\//, ''));
@@ -415,7 +415,8 @@ const deleteReel = (req, res) => {
     // Remove files from disk
     if (reel.file_path) {
       try {
-        const fullPath = path.resolve(__dirname, '../../', reel.file_path);
+        const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../..');
+        const fullPath = path.resolve(rootDir, reel.file_path.replace(/^\//, ''));
         if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
       } catch (e) {
         console.error('Disk clean file delete failed:', e.message);
@@ -423,7 +424,8 @@ const deleteReel = (req, res) => {
     }
     if (reel.thumbnail_path) {
       try {
-        const fullThumbPath = path.resolve(__dirname, '../../', reel.thumbnail_path);
+        const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../..');
+        const fullThumbPath = path.resolve(rootDir, reel.thumbnail_path.replace(/^\//, ''));
         if (fs.existsSync(fullThumbPath)) fs.unlinkSync(fullThumbPath);
       } catch (e) {
         console.error('Disk clean thumbnail delete failed:', e.message);

@@ -1,12 +1,20 @@
 const fs = require('fs');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
-const ffmpegStatic = require('ffmpeg-static');
+let ffmpegPath;
+if (process.pkg) {
+  ffmpegPath = path.join(path.dirname(process.execPath), 'ffmpeg.exe');
+  if (!fs.existsSync(ffmpegPath)) {
+    ffmpegPath = 'ffmpeg';
+  }
+} else {
+  ffmpegPath = require('ffmpeg-static');
+}
+ffmpeg.setFfmpegPath(ffmpegPath);
 
-// Set the ffmpeg binary path to the static binary we installed
-ffmpeg.setFfmpegPath(ffmpegStatic);
-
-const MUSIC_BASE_DIR = path.resolve(__dirname, '../../assets/music');
+const MUSIC_BASE_DIR = process.pkg
+  ? path.join(path.dirname(process.execPath), 'assets/music')
+  : path.resolve(__dirname, '../../assets/music');
 const SUPPORTED_EMOTIONS = [
   'horror', 'mystery', 'emotional', 'crime', 
   'shocking', 'suspense', 'funny', 'motivational'

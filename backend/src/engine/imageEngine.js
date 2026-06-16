@@ -3,7 +3,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const TEMP_DIR = path.resolve(__dirname, '../../output/temp');
+const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../../');
+const TEMP_DIR = path.resolve(rootDir, 'output/temp');
 
 function searchPixabay(query, apiKey) {
   return new Promise((resolve) => {
@@ -107,7 +108,8 @@ async function getBackgroundImages(options, scenes, reelId) {
   }
 
   if (bgType === 'custom' && customImagePath) {
-    const fullPath = path.resolve(__dirname, '../../', customImagePath.replace(/^\//, ''));
+    const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../../');
+    const fullPath = path.resolve(rootDir, customImagePath.replace(/^\//, ''));
     if (fs.existsSync(fullPath)) {
       console.log('[ImageEngine] Using custom background:', fullPath);
       return new Array(scenes.length).fill(fullPath);

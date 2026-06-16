@@ -221,8 +221,9 @@ const formatBytesToReadable = (bytes) => {
 // @access  Private
 const getSystemCache = (req, res) => {
   try {
-    const tempDir = path.resolve(__dirname, '../../../output/temp');
-    const thumbDir = path.resolve(__dirname, '../../../output/thumbnails');
+    const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../../');
+    const tempDir = path.resolve(rootDir, 'output/temp');
+    const thumbDir = path.resolve(rootDir, 'output/thumbnails');
     
     const tempSize = getDirSizeRecursive(tempDir);
     const thumbSize = getDirSizeRecursive(thumbDir);
@@ -268,7 +269,8 @@ const clearSystemCache = (req, res) => {
     const { id } = req.params;
     
     if (id === 'render_temp' || id === 'all') {
-      const tempDir = path.resolve(__dirname, '../../../output/temp');
+      const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../../');
+      const tempDir = path.resolve(rootDir, 'output/temp');
       if (fs.existsSync(tempDir)) {
         const files = fs.readdirSync(tempDir);
         for (const file of files) {
@@ -288,7 +290,8 @@ const clearSystemCache = (req, res) => {
     }
     
     if (id === 'thumbnails' || id === 'all') {
-      const thumbDir = path.resolve(__dirname, '../../../output/thumbnails');
+      const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../../');
+      const thumbDir = path.resolve(rootDir, 'output/thumbnails');
       if (fs.existsSync(thumbDir)) {
         const files = fs.readdirSync(thumbDir);
         for (const file of files) {

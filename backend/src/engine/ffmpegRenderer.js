@@ -15,9 +15,10 @@ if (process.pkg) {
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 
-const OUTPUT_DIR = path.resolve(__dirname, '../../output/reels');
-const THUMB_DIR = path.resolve(__dirname, '../../output/thumbnails');
-const TEMP_DIR = path.resolve(__dirname, '../../output/temp');
+const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../../');
+const OUTPUT_DIR = path.resolve(rootDir, 'output/reels');
+const THUMB_DIR = path.resolve(rootDir, 'output/thumbnails');
+const TEMP_DIR = path.resolve(rootDir, 'output/temp');
 
 [OUTPUT_DIR, THUMB_DIR, TEMP_DIR].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

@@ -540,7 +540,7 @@ async function renderTextStoryReel(reelData, outputPath, options = {}) {
     } else if (fs.existsSync(avatar)) {
       avatarPath = avatar;
     } else {
-      const rootDir = path.resolve(__dirname, '../../..');
+      const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../..');
       const publicPath = path.join(rootDir, avatar.replace(/^\//, ''));
       if (fs.existsSync(publicPath)) {
         avatarPath = publicPath;

@@ -15,7 +15,8 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 const ffmpegStatic = require('ffmpeg-static');
 
-const TEMP_DIR = path.resolve(__dirname, '../../output/temp');
+const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../../');
+const TEMP_DIR = path.resolve(rootDir, 'output/temp');
 
 if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR, { recursive: true });

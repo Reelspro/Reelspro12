@@ -5,7 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const { protect: authMiddleware } = require('../middleware/authMiddleware');
 
-const UPLOAD_DIR = path.resolve(__dirname, '../../storage/uploads/backgrounds');
+const rootDir = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../');
+const UPLOAD_DIR = path.resolve(rootDir, 'storage/uploads/backgrounds');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
