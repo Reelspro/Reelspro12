@@ -247,7 +247,8 @@ Rules:
 - Make it extremely engaging, like a Reddit Story (e.g. "I recently got married. My husband has an adult son. I DO NOT HAVE CHILDREN...").
 - Start with a SHOCKING hook sentence.
 - End abruptly on a CLIFFHANGER mid-thought or at the most suspenseful line so the reader is forced to check the comments for the full story.
-- Use ALL CAPS for the 1-2 most suspenseful/shocking sentences.
+- VERY IMPORTANT: Wrap the 1-2 most suspenseful or shocking sentences exactly in <highlight>...</highlight> tags. (e.g. <highlight>I do not have children.</highlight>)
+- Do NOT use ALL CAPS, only use the <highlight> tags for emphasis.
 - Keep total text under 150 words. Make it punchy.
 - Do NOT use markdown, do NOT write "Introduction", do NOT include intro text. Just the story itself.
 

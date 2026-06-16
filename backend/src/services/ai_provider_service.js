@@ -246,7 +246,7 @@ function fallbackToTemplate(promptText, emotion = 'suspense') {
   ];
 
   const randomHook = hooks[Math.floor(Math.random() * hooks.length)];
-  const randomCliffhanger = cliffhangers[Math.floor(Math.random() * cliffhangers.length)];
+  const randomCliffhanger = `<highlight>${cliffhangers[Math.floor(Math.random() * cliffhangers.length)]}</highlight>`;
 
   // Create the final text story
   const fullStoryText = `${randomHook} ${middleText}${randomCliffhanger}`;

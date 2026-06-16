@@ -197,19 +197,19 @@ function parseSegments(screenText, accentColorHex) {
   if (!screenText) return [];
 
   // We want to segment the text. Let's find matches for:
+  // 0. Explicit <highlight> tags
   // 1. Quoted speech: "..." or “...”
   // 2. ALL-CAPS words/phrases (3+ chars)
   // 3. Shock keywords
   
-  // We construct a regex to match quotes or words
-  // Let's do a simple tokenizer that scans words and builds segments.
-  const regex = /("[^"]+"|[“][^”]+[”])|(\b[A-Z]{3,}\b)|(\b[a-zA-Z-]{3,}\b)/g;
+  // We construct a regex to match these patterns
+  const regex = /(<highlight>[^<]+<\/highlight>)|("[^"]+"|[“][^”]+[”])|(\b[A-Z]{3,}\b)|(\b[a-zA-Z-]{3,}\b)/g;
   
   const tokens = [];
   let lastIndex = 0;
   let match;
   let accentCount = 0;
-  const MAX_ACCENTS = 4; // 2-4 max highlights per screen
+  const MAX_ACCENTS = 10; // Allow more highlights if explicitly tagged
 
   while ((match = regex.exec(screenText)) !== null) {
     const matchIndex = match.index;
@@ -223,14 +223,22 @@ function parseSegments(screenText, accentColorHex) {
     }
 
     const fullMatch = match[0];
-    const isQuote = match[1] !== undefined;
-    const isAllCaps = match[2] !== undefined;
-    const word = match[3] !== undefined ? match[3].toLowerCase() : '';
+    const isHighlightTag = match[1] !== undefined;
+    const isQuote = match[2] !== undefined;
+    const isAllCaps = match[3] !== undefined;
+    const word = match[4] !== undefined ? match[4].toLowerCase() : '';
 
-    if (isQuote) {
+    if (isHighlightTag) {
+      // Strip the tags
+      const cleanText = fullMatch.replace(/<\/?highlight>/g, '');
+      tokens.push({
+        text: cleanText,
+        style: 'accent' // Apply accent highlight style
+      });
+    } else if (isQuote) {
       tokens.push({
         text: fullMatch,
-        style: 'dialogue' // Dialogue style (accent + italic)
+        style: 'dialogue'
       });
     } else if (isAllCaps && accentCount < MAX_ACCENTS) {
       tokens.push({
