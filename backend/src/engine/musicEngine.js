@@ -107,12 +107,14 @@ const processMusic = (inputPath, outputPath, duration = 30) => {
 
     const fadeDuration = 3; // 3 seconds fade in and fade out for emotional feel
 
-    ffmpeg(inputPath)
+    ffmpeg()
+      .input(inputPath)
+      .inputOptions(['-stream_loop', '-1'])
       .setDuration(duration) // Trims music to reel duration
       .audioFilters([
         `afade=t=in:ss=0:d=${fadeDuration}`, // Slow emotional fade in
         `afade=t=out:st=${Math.max(0, duration - fadeDuration)}:d=${fadeDuration}`, // Slow emotional fade out
-        'volume=0.7' // Soft background volume for emotional storytelling
+        'volume=1.0' // Normalize base volume here, it will be adjusted in amix
       ])
       .save(outputPath)
       .on('end', () => {
