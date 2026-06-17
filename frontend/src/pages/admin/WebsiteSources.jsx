@@ -4,6 +4,8 @@ import useSourceStore from '../../store/sourceStore';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 const WebsiteSources = () => {
   const { sources, fetchSources, addSource, updateSource, deleteSource, isLoading } = useSourceStore();
   const [showModal, setShowModal] = useState(false);
@@ -92,10 +94,13 @@ const WebsiteSources = () => {
           <button
             onClick={async () => {
               try {
-                await axios.post('/api/admin/scrape/all');
+                const token = localStorage.getItem('token');
+                await axios.post(`${API_URL}/admin/scrape/all`, {}, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
                 toast.success('Scraping all sources started!');
               } catch (err) {
-                toast.error('Failed to start scraping');
+                toast.error(err.response?.data?.error || 'Failed to start scraping');
               }
             }}
             className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
@@ -171,8 +176,15 @@ const WebsiteSources = () => {
                     <div className="flex justify-end items-center gap-1.5">
                       <button
                         onClick={async () => {
-                          await axios.post(`/api/admin/scrape/${source.id}`);
-                          toast.success(`Scraping ${source.url} started!`);
+                          try {
+                            const token = localStorage.getItem('token');
+                            await axios.post(`${API_URL}/admin/scrape/${source.id}`, {}, {
+                              headers: { Authorization: `Bearer ${token}` }
+                            });
+                            toast.success(`Scraping ${source.url} started!`);
+                          } catch (err) {
+                            toast.error(err.response?.data?.error || `Failed to scrape ${source.url}`);
+                          }
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
                       >
