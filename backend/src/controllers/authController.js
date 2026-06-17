@@ -314,6 +314,9 @@ const getPendingUsers = (req, res) => {
 // @desc    Admin: Get system settings
 // @route   GET /api/admin/settings
 // @access  Private/Admin
+// @desc    Admin: Get system settings
+// @route   GET /api/admin/settings
+// @access  Private/Admin
 const getSystemSettings = (req, res) => {
   try {
     const settings = db.prepare('SELECT * FROM system_settings WHERE id = 1').get();
@@ -321,6 +324,8 @@ const getSystemSettings = (req, res) => {
     if (settings) {
       settings.auto_approve_users = !!settings.auto_approve_users;
       settings.maintenance_mode = !!settings.maintenance_mode;
+      settings.update_available = !!settings.update_available;
+      settings.force_update = !!settings.force_update;
     }
     res.json(settings || {});
   } catch (error) {
@@ -341,6 +346,11 @@ const updateSystemSettings = (req, res) => {
       platform_name,
       maintenance_mode,
       article_cooldown_minutes,
+      update_available,
+      update_version,
+      update_url,
+      update_changelog,
+      force_update,
     } = req.body;
 
     const stmt = db.prepare(`
@@ -351,6 +361,11 @@ const updateSystemSettings = (req, res) => {
           platform_name = ?, 
           maintenance_mode = ?,
           article_cooldown_minutes = COALESCE(?, article_cooldown_minutes, 30),
+          update_available = ?,
+          update_version = ?,
+          update_url = ?,
+          update_changelog = ?,
+          force_update = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `);
@@ -361,13 +376,20 @@ const updateSystemSettings = (req, res) => {
       default_ai_provider,
       platform_name,
       maintenance_mode ? 1 : 0,
-      article_cooldown_minutes != null ? article_cooldown_minutes : null
+      article_cooldown_minutes != null ? article_cooldown_minutes : null,
+      update_available ? 1 : 0,
+      update_version != null ? update_version : '',
+      update_url != null ? update_url : '',
+      update_changelog != null ? update_changelog : '',
+      force_update ? 1 : 0
     );
 
     const updated = db.prepare('SELECT * FROM system_settings WHERE id = 1').get();
     if (updated) {
       updated.auto_approve_users = !!updated.auto_approve_users;
       updated.maintenance_mode = !!updated.maintenance_mode;
+      updated.update_available = !!updated.update_available;
+      updated.force_update = !!updated.force_update;
     }
     
     res.json(updated);

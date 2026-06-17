@@ -139,6 +139,87 @@ const SystemSettings = () => {
           </div>
         </div>
 
+        {/* App Updates Configuration */}
+        <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 border-b border-gray-700 pb-2">
+            <Zap className="text-purple-400" /> App Updates Management
+          </h2>
+          
+          <div className="space-y-6">
+            <div className="flex items-center justify-between p-4 bg-gray-700/30 border border-gray-600 rounded-lg">
+              <div>
+                <h3 className="font-bold">Enable Update Notification</h3>
+                <p className="text-sm text-gray-400">If enabled, all users will see a notification to update to the specified version.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="update_available"
+                  checked={formData.update_available || false}
+                  onChange={handleChange}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Target Version</label>
+                <input
+                  type="text"
+                  name="update_version"
+                  placeholder="e.g. 1.3.1"
+                  value={formData.update_version || ''}
+                  onChange={handleChange}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Installer Download URL</label>
+                <input
+                  type="text"
+                  name="update_url"
+                  placeholder="e.g. https://domain.com/installer.exe"
+                  value={formData.update_url || ''}
+                  onChange={handleChange}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Changelog (One feature per line)</label>
+              <textarea
+                name="update_changelog"
+                rows={4}
+                placeholder="- Added new background colors&#10;- Fixed rendering speed&#10;- Fixed highlight tags bug"
+                value={formData.update_changelog || ''}
+                onChange={handleChange}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-red-950/20 border border-red-900/30 rounded-lg">
+              <div>
+                <h3 className="font-bold text-red-400">Force Update</h3>
+                <p className="text-sm text-gray-400">Lock user dashboards and force them to download the update.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="force_update"
+                  checked={formData.force_update || false}
+                  onChange={handleChange}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
         {/* Danger Zone */}
         <div className="bg-gray-800 p-6 rounded-xl border border-red-900/50 shadow-xl">
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2 border-b border-gray-700 pb-2 text-red-400">

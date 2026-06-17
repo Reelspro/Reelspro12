@@ -21,10 +21,6 @@ export default function UpdateNotification() {
   useEffect(() => {
     if (!token) return;
 
-    // Skip if dismissed within 24 h
-    const ts = localStorage.getItem('updateDismissedAt');
-    if (ts && Date.now() - Number(ts) < 86_400_000) return;
-
     checkUpdate();
 
     // Re-check every 6 hours while app is open
@@ -40,8 +36,17 @@ export default function UpdateNotification() {
       if (!res.ok) return;
       const data = await res.json();
       if (data.updateAvailable) {
+        // If it's a regular update and dismissed recently, skip showing
+        const ts = localStorage.getItem('updateDismissedAt');
+        if (!data.forceUpdate && ts && Date.now() - Number(ts) < 86_400_000) {
+          return;
+        }
+
         setInfo(data);
         setVisible(true);
+        if (data.forceUpdate) {
+          setShowModal(true);
+        }
       }
     } catch {
       /* silently fail */
@@ -49,6 +54,7 @@ export default function UpdateNotification() {
   }
 
   function dismiss() {
+    if (info?.forceUpdate) return; // Cannot dismiss force update
     setVisible(false);
     localStorage.setItem('updateDismissedAt', Date.now().toString());
   }
@@ -111,10 +117,12 @@ export default function UpdateNotification() {
                 v{info.latestVersion}
               </span>
             </div>
-            <button onClick={dismiss}
-              style={{ background:'none', border:'none', color:'#555', cursor:'pointer', fontSize:20, lineHeight:1 }}>
-              ×
-            </button>
+            {!info.forceUpdate && (
+              <button onClick={dismiss}
+                style={{ background:'none', border:'none', color:'#555', cursor:'pointer', fontSize:20, lineHeight:1 }}>
+                ×
+              </button>
+            )}
           </div>
 
           {/* Release date */}
@@ -147,15 +155,17 @@ export default function UpdateNotification() {
               }}>
               🚀 Update Now
             </button>
-            <button onClick={dismiss}
-              style={{
-                padding:'10px 14px', borderRadius:10,
-                background:'rgba(255,255,255,0.05)',
-                border:'1px solid rgba(255,255,255,0.08)',
-                color:'#64748b', fontSize:13, cursor:'pointer',
-              }}>
-              Later
-            </button>
+            {!info.forceUpdate && (
+              <button onClick={dismiss}
+                style={{
+                  padding:'10px 14px', borderRadius:10,
+                  background:'rgba(255,255,255,0.05)',
+                  border:'1px solid rgba(255,255,255,0.08)',
+                  color:'#64748b', fontSize:13, cursor:'pointer',
+                }}>
+                Later
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -180,14 +190,16 @@ export default function UpdateNotification() {
             position:'relative',
           }}>
             {/* Close */}
-            <button onClick={() => { setShowModal(false); dismiss(); }}
-              style={{
-                position:'absolute', top:18, right:18,
-                background:'rgba(255,255,255,0.06)', border:'none',
-                borderRadius:8, width:32, height:32, color:'#94a3b8',
-                fontSize:18, cursor:'pointer', display:'flex',
-                alignItems:'center', justifyContent:'center',
-              }}>×</button>
+            {!info.forceUpdate && (
+              <button onClick={() => { setShowModal(false); dismiss(); }}
+                style={{
+                  position:'absolute', top:18, right:18,
+                  background:'rgba(255,255,255,0.06)', border:'none',
+                  borderRadius:8, width:32, height:32, color:'#94a3b8',
+                  fontSize:18, cursor:'pointer', display:'flex',
+                  alignItems:'center', justifyContent:'center',
+                }}>×</button>
+            )}
 
             {/* Title */}
             <div style={{ marginBottom:24 }}>
@@ -284,16 +296,22 @@ export default function UpdateNotification() {
                 <p style={{ color:'#64748b', fontSize:13, margin:'0 0 20px' }}>
                   File download ho rahi hai. Upar diye steps follow karo.
                 </p>
-                <button
-                  onClick={() => { setShowModal(false); dismiss(); }}
-                  style={{
-                    padding:'12px 32px', borderRadius:10, border:'none',
-                    background:'rgba(99,102,241,0.15)',
-                    border:'1px solid rgba(99,102,241,0.3)',
-                    color:'#a5b4fc', fontWeight:700, fontSize:14, cursor:'pointer',
-                  }}>
-                  Close
-                </button>
+                {!info.forceUpdate ? (
+                  <button
+                    onClick={() => { setShowModal(false); dismiss(); }}
+                    style={{
+                      padding:'12px 32px', borderRadius:10, border:'none',
+                      background:'rgba(99,102,241,0.15)',
+                      border:'1px solid rgba(99,102,241,0.3)',
+                      color:'#a5b4fc', fontWeight:700, fontSize:14, cursor:'pointer',
+                    }}>
+                    Close
+                  </button>
+                ) : (
+                  <p style={{ color:'#ef4444', fontSize:13, fontWeight:600, marginTop:10 }}>
+                    ⚠️ Please close this app and run the installer to complete the update.
+                  </p>
+                )}
               </div>
             )}
 

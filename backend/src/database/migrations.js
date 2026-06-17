@@ -156,6 +156,11 @@ const runMigrations = () => {
   }
 
   safeAlter(`ALTER TABLE system_settings ADD COLUMN article_cooldown_minutes INTEGER DEFAULT 30`);
+  safeAlter(`ALTER TABLE system_settings ADD COLUMN update_available BOOLEAN DEFAULT 0`);
+  safeAlter(`ALTER TABLE system_settings ADD COLUMN update_version TEXT DEFAULT ''`);
+  safeAlter(`ALTER TABLE system_settings ADD COLUMN update_url TEXT DEFAULT ''`);
+  safeAlter(`ALTER TABLE system_settings ADD COLUMN update_changelog TEXT DEFAULT ''`);
+  safeAlter(`ALTER TABLE system_settings ADD COLUMN force_update BOOLEAN DEFAULT 0`);
 
   // PHASE A — New tables
   db.exec(`

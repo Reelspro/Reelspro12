@@ -13,6 +13,7 @@
 const path = require('path');
 const fs   = require('fs');
 const axios = require('axios');
+const db = require('../config/db');
 
 const ROOT_DIR     = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '../../../');
 const VERSION_FILE = path.join(ROOT_DIR, 'version.json');
@@ -45,6 +46,36 @@ const getVersion = (req, res) => {
 /* ─── GET /api/update/check ─────────────────────────── */
 const checkUpdate = async (req, res) => {
   const local = getLocalVersion();
+
+  // ── 1. Check system_settings in the database first ──────
+  try {
+    const settings = db.prepare('SELECT update_available, update_version, update_url, update_changelog, force_update FROM system_settings WHERE id = 1').get();
+    if (settings && settings.update_available) {
+      const dbVersion = settings.update_version || '0.0.0';
+      const isNewer = compareSemver(dbVersion, local.version) > 0;
+
+      if (isNewer) {
+        const changelog = settings.update_changelog
+          ? settings.update_changelog.split('\n').map(l => l.trim()).filter(Boolean)
+          : [];
+        return res.json({
+          updateAvailable: true,
+          localVersion: local.version,
+          latestVersion: dbVersion,
+          releaseDate: new Date().toISOString().split('T')[0],
+          changelog,
+          downloadUrl: settings.update_url,
+          fileName: `ReelsPro-Setup-${dbVersion}.exe`,
+          fileSize: 0,
+          forceUpdate: !!settings.force_update,
+        });
+      }
+    }
+  } catch (dbErr) {
+    console.error('[UpdateController] Database update check failed:', dbErr.message);
+  }
+
+  // ── 2. Fallback to GitHub Release ──────
   const repo  = process.env.GITHUB_REPO; // e.g. "username/reelspro-v12"
 
   if (!repo) {
