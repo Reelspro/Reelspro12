@@ -43,6 +43,7 @@ export default function ReelGenerator() {
   const [selectedMusic, setSelectedMusic] = useState('none');
   const [storyTitle, setStoryTitle] = useState('');
   const [storyContent, setStoryContent] = useState('');
+  const [textStoryMode, setTextStoryMode] = useState(false); // Full page text story display
 
   // Articles & Music options
   const [articles, setArticles] = useState([]);
@@ -217,7 +218,8 @@ export default function ReelGenerator() {
       voice,
       musicId,
       musicEnabled,
-      renderingEngine: 'remotion'
+      renderingEngine: 'remotion',
+      textStoryMode
     };
 
     try {
@@ -297,6 +299,35 @@ export default function ReelGenerator() {
                   <Sliders className="text-purple-400" size={20} />
                   Configure Parameters
                 </h2>
+
+                {/* Text Story Mode Toggle */}
+                <div
+                  onClick={() => setTextStoryMode(!textStoryMode)}
+                  className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all select-none ${
+                    textStoryMode
+                      ? 'bg-gradient-to-r from-purple-950/40 to-pink-950/30 border-purple-500 shadow-lg shadow-purple-500/10'
+                      : 'bg-gray-900 border-gray-705 hover:border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
+                      textStoryMode ? 'bg-purple-600/30 border border-purple-500/40' : 'bg-gray-800 border border-gray-700'
+                    }`}>
+                      📖
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm text-white">Full Page Text Story Mode</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Text fills the entire screen — no background video, just bold story text on color</div>
+                    </div>
+                  </div>
+                  <div className={`relative w-12 h-6 rounded-full transition-all duration-300 flex-shrink-0 ${
+                    textStoryMode ? 'bg-purple-600' : 'bg-gray-700'
+                  }`}>
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-300 ${
+                      textStoryMode ? 'left-7' : 'left-1'
+                    }`} />
+                  </div>
+                </div>
 
                 {/* Script Mode Selection Tabs */}
                 <div>
@@ -445,7 +476,7 @@ export default function ReelGenerator() {
                 </button>
               </form>
 
-              {/* Right Column - Voice & Audio Side Panel */}
+              {/* Right Column - Voice, Audio & Preview Side Panel */}
               <div className="space-y-6">
                 {/* Voice Selection */}
                 <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-800 backdrop-blur">
@@ -515,6 +546,47 @@ export default function ReelGenerator() {
                   )}
                 </div>
               </div>
+
+              {/* TEXT STORY MODE LIVE PREVIEW */}
+              {textStoryMode && (
+                <div className="bg-gray-800/50 p-6 rounded-2xl border border-purple-800/40 backdrop-blur">
+                  <h3 className="text-sm font-bold text-purple-400 mb-4 flex items-center gap-2">
+                    <Eye className="text-purple-400" size={14} />
+                    Text Story Preview
+                  </h3>
+                  <div className="flex justify-center">
+                    {/* Phone Mockup */}
+                    <div className="relative border-[6px] border-gray-800 rounded-[32px] w-[160px] h-[284px] overflow-hidden shadow-2xl select-none">
+                      <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-14 h-3 bg-gray-800 rounded-full z-20" />
+                      {/* Full-page gradient background */}
+                      <div className={`absolute inset-0 z-0 ${
+                        selectedTheme === 'horror' ? 'bg-gradient-to-br from-red-950 via-gray-950 to-black' :
+                        selectedTheme === 'bold' ? 'bg-gradient-to-br from-yellow-950 via-zinc-900 to-black' :
+                        selectedTheme === 'modern' ? 'bg-gradient-to-br from-blue-950 via-slate-900 to-black' :
+                        selectedTheme === 'minimal' ? 'bg-gradient-to-b from-gray-900 to-black' :
+                        'bg-gradient-to-br from-purple-950 via-indigo-950 to-black'
+                      }`} />
+                      {/* Full-page text overlay */}
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-3 text-center">
+                        <div className={`text-[9px] font-black leading-tight uppercase tracking-wide ${
+                          selectedTheme === 'horror' ? 'text-red-400' :
+                          selectedTheme === 'bold' ? 'text-yellow-400' :
+                          selectedTheme === 'modern' ? 'text-cyan-300' :
+                          selectedTheme === 'minimal' ? 'text-white' :
+                          'text-purple-300'
+                        }`}>
+                          {storyContent.trim()
+                            ? storyContent.substring(0, 120) + (storyContent.length > 120 ? '...' : '')
+                            : 'Your story text will be displayed here filling the entire screen in large, bold typography...'}
+                        </div>
+                      </div>
+                      {/* Subtle scanline overlay */}
+                      <div className="absolute inset-0 z-20 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'repeating-linear-gradient(0deg, #fff, #fff 1px, transparent 1px, transparent 3px)' }} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 text-center mt-3">Text covers the full frame — perfect for story-style reels</p>
+                </div>
+              )}
             </motion.div>
           )}
 

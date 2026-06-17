@@ -22,6 +22,7 @@ export default function TextStoryGenerator() {
   const [currentScreenIdx, setCurrentScreenIdx] = useState(0);
   const [audioPreviewPlaying, setAudioPreviewPlaying] = useState(false);
   const [audioObj, setAudioObj] = useState(null);
+  const [fullPageMode, setFullPageMode] = useState(false); // Full screen text story mode
 
   // Fetch styles on mount
   useEffect(() => {
@@ -248,6 +249,35 @@ export default function TextStoryGenerator() {
                 <Smartphone size={20} />
                 Story Setup & Design
               </h2>
+            </div>
+
+            {/* Full Page Text Story Mode Toggle */}
+            <div
+              onClick={() => setFullPageMode(!fullPageMode)}
+              className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all select-none ${
+                fullPageMode
+                  ? 'bg-gradient-to-r from-pink-950/40 to-purple-950/30 border-pink-500 shadow-lg shadow-pink-500/10'
+                  : 'bg-[#181829] border-gray-800 hover:border-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
+                  fullPageMode ? 'bg-pink-600/30 border border-pink-500/40' : 'bg-gray-800/60 border border-gray-700'
+                }`}>
+                  📖
+                </div>
+                <div>
+                  <div className="font-bold text-sm text-white">Full Page Text Story Mode</div>
+                  <div className="text-xs text-gray-500 mt-0.5">Text fills the entire screen — no avatar header, no footer bar</div>
+                </div>
+              </div>
+              <div className={`relative w-12 h-6 rounded-full transition-all duration-300 flex-shrink-0 ${
+                fullPageMode ? 'bg-pink-600' : 'bg-gray-700'
+              }`}>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-300 ${
+                  fullPageMode ? 'left-7' : 'left-1'
+                }`} />
+              </div>
             </div>
 
             {/* Username & Avatar URL */}
@@ -531,7 +561,45 @@ export default function TextStoryGenerator() {
 
               {/* CONTENT WRAPPER */}
               <div className="z-20 flex flex-col justify-between h-full p-5 pt-8">
-                
+              
+              {fullPageMode ? (
+                /* === FULL PAGE TEXT MODE === */
+                <div className="flex flex-col items-center justify-center h-full text-center px-3">
+                  <div className="space-y-2 leading-relaxed">
+                    {screens.length > 0 ? (
+                      screens[currentScreenIdx]?.segments.map((seg, sIdx) => {
+                        if (seg.style === 'cta') return null;
+                        const isAccent = seg.style === 'accent' || seg.style === 'dialogue';
+                        return (
+                          <span
+                            key={sIdx}
+                            style={{ color: isAccent ? (accentColor?.hex || '#B22222') : (background?.text || '#1A1A1A') }}
+                            className={`font-black text-[18px] leading-snug ${isAccent ? 'italic' : ''}`}
+                          >
+                            {seg.text}{' '}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <p className="font-black text-[16px] leading-snug text-center" style={{ color: background?.text || '#1A1A1A' }}>
+                        Your full-page text story preview will appear here. Type a story on the left!
+                      </p>
+                    )}
+                  </div>
+                  {screens.length > 0 && (
+                    <div className="mt-4">
+                      <span
+                        style={{ color: accentColor?.hex || '#B22222' }}
+                        className="font-black text-[10px] uppercase tracking-widest bg-white/30 px-2 py-0.5 rounded"
+                      >
+                        Read More...
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* === FACEBOOK CARD MODE (default) === */
+                <>
                 {/* Facebook Text Story Header */}
                 <div className="flex items-center gap-3 border-b border-gray-300/10 pb-3">
                   {/* Avatar circle */}
@@ -642,8 +710,10 @@ export default function TextStoryGenerator() {
                     Full Story In First Comment 👇
                   </span>
                 </div>
+              </>
+              )}
 
-              </div>
+            </div>
 
             </div>
 

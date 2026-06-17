@@ -45,6 +45,7 @@ export default function ReelStudio() {
   const [duration, setDuration] = useState(30);
   const [selectedTone, setSelectedTone] = useState('casual');
   const [customText, setCustomText] = useState('');
+  const [textStoryMode, setTextStoryMode] = useState(false); // Full page text story display
 
   // Audio preview states
   const [musicTracks, setMusicTracks] = useState([]);
@@ -144,7 +145,8 @@ export default function ReelStudio() {
       musicId: selectedMusic,
       musicEnabled: selectedMusic !== 'none',
       tone: selectedTone,
-      renderingEngine: 'remotion'
+      renderingEngine: 'remotion',
+      textStoryMode
     };
 
     const result = await generateReel(
@@ -198,6 +200,35 @@ export default function ReelStudio() {
               <Layers className="text-purple-400" size={20} />
               Reel Customization Options
             </h2>
+
+            {/* Full Page Text Story Mode Toggle */}
+            <div
+              onClick={() => setTextStoryMode(!textStoryMode)}
+              className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all select-none ${
+                textStoryMode
+                  ? 'bg-gradient-to-r from-purple-950/40 to-pink-950/30 border-purple-500 shadow-lg shadow-purple-500/10'
+                  : 'bg-gray-900 border-gray-750 hover:border-gray-650'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
+                  textStoryMode ? 'bg-purple-600/30 border border-purple-500/40' : 'bg-gray-800 border border-gray-700'
+                }`}>
+                  📖
+                </div>
+                <div>
+                  <div className="font-bold text-sm text-white">Full Page Text Story Mode</div>
+                  <div className="text-xs text-gray-500 mt-0.5">Text fills the entire screen — bold story text on colored background, no video</div>
+                </div>
+              </div>
+              <div className={`relative w-12 h-6 rounded-full transition-all duration-300 flex-shrink-0 ${
+                textStoryMode ? 'bg-purple-600' : 'bg-gray-700'
+              }`}>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-300 ${
+                  textStoryMode ? 'left-7' : 'left-1'
+                }`} />
+              </div>
+            </div>
 
             {/* Custom script input */}
             <div>
@@ -387,12 +418,12 @@ export default function ReelStudio() {
             </button>
           </form>
 
-          {/* RIGHT PANEL - Live Preview Placeholder (5 Cols) */}
+          {/* RIGHT PANEL - Live Preview (5 Cols) */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center bg-gray-800/20 border border-gray-800 p-6 rounded-2xl backdrop-blur">
             <div className="text-center mb-4">
               <span className="text-xs uppercase bg-purple-950 border border-purple-800/40 text-purple-300 px-3 py-1 rounded-full font-bold tracking-wider inline-flex items-center gap-1.5">
                 <Eye size={12} />
-                Live Preview Mockup
+                {textStoryMode ? 'Text Story Preview' : 'Live Preview Mockup'}
               </span>
             </div>
 
@@ -401,56 +432,78 @@ export default function ReelStudio() {
               {/* Phone Speaker/Camera Notch */}
               <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-20 h-4 bg-gray-850 rounded-full z-20" />
               
-              {/* Simulated theme background rendering based on selection */}
+              {/* Theme background */}
               <div className={`absolute inset-0 bg-gradient-to-b ${
                 THEMES.find(t => t.id === selectedTheme)?.color || 'from-purple-950 to-black'
               } opacity-80 z-0 transition-all duration-700`} />
 
-              {/* Watermark Logo */}
-              <div className="z-10 flex justify-between items-center text-[10px] text-gray-500/70 font-semibold mt-2">
-                <span>⚡ ReelsPro Studio</span>
-                <span>Category: Custom</span>
-              </div>
+              {textStoryMode ? (
+                /* Full Page Text Story Preview */
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center">
+                  <div className={`text-sm font-black leading-relaxed uppercase tracking-wide ${
+                    selectedTheme === 'horror' ? 'text-red-400' :
+                    selectedTheme === 'bold' ? 'text-yellow-400' :
+                    selectedTheme === 'modern' ? 'text-cyan-300' :
+                    selectedTheme === 'minimal' ? 'text-white' :
+                    'text-purple-300'
+                  }`}>
+                    {customText.trim()
+                      ? customText.substring(0, 200) + (customText.length > 200 ? '...' : '')
+                      : 'Your story text will fill the entire screen — bold typography, no background video.'}
+                  </div>
+                  <div className="mt-4 text-[10px] font-bold text-white/30 uppercase tracking-widest">Full Page Text Story</div>
+                </div>
+              ) : (
+                <>
+                  {/* Watermark Logo */}
+                  <div className="z-10 flex justify-between items-center text-[10px] text-gray-500/70 font-semibold mt-2">
+                    <span>⚡ ReelsPro Studio</span>
+                    <span>Category: Custom</span>
+                  </div>
 
-              {/* Subtitles Overlay Panel */}
-              <div className="z-10 flex flex-col items-center justify-center flex-1 py-8 px-2 text-center select-none">
-                <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-xl">
-                  🎬
-                </div>
-                
-                {/* Highlighted text styling based on selected theme */}
-                <motion.p
-                  key={selectedTheme}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className={`text-base font-extrabold uppercase tracking-wide px-3 py-1 bg-black/40 rounded border backdrop-blur-sm ${
-                    selectedTheme === 'horror' ? 'text-red-500 border-red-900 font-serif' :
-                    selectedTheme === 'bold' ? 'text-yellow-400 border-yellow-900 font-black' :
-                    selectedTheme === 'modern' ? 'text-cyan-400 border-blue-900 font-sans' :
-                    selectedTheme === 'minimal' ? 'text-white border-gray-800 font-sans' :
-                    'text-purple-400 border-purple-900 font-serif'
-                  }`}
-                >
-                  {getSubtitlesText()}
-                </motion.p>
-              </div>
+                  {/* Subtitles Overlay Panel */}
+                  <div className="z-10 flex flex-col items-center justify-center flex-1 py-8 px-2 text-center select-none">
+                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-xl">
+                      🎬
+                    </div>
+                    
+                    {/* Highlighted text styling based on selected theme */}
+                    <motion.p
+                      key={selectedTheme}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={`text-base font-extrabold uppercase tracking-wide px-3 py-1 bg-black/40 rounded border backdrop-blur-sm ${
+                        selectedTheme === 'horror' ? 'text-red-500 border-red-900 font-serif' :
+                        selectedTheme === 'bold' ? 'text-yellow-400 border-yellow-900 font-black' :
+                        selectedTheme === 'modern' ? 'text-cyan-400 border-blue-900 font-sans' :
+                        selectedTheme === 'minimal' ? 'text-white border-gray-800 font-sans' :
+                        'text-purple-400 border-purple-900 font-serif'
+                      }`}
+                    >
+                      {getSubtitlesText()}
+                    </motion.p>
+                  </div>
 
-              {/* Bottom simulated metadata */}
-              <div className="z-10 space-y-2 border-t border-white/5 pt-2">
-                <div className="flex items-center justify-between text-[10px] text-gray-400">
-                  <span className="font-semibold text-white/95">@reels_creator</span>
-                  <span>Audio: {selectedMusic === 'none' ? 'None' : 'Library Track'}</span>
-                </div>
-                
-                {/* Progress simulator bar */}
-                <div className="w-full bg-white/10 h-1 rounded overflow-hidden">
-                  <div className="bg-purple-500 h-full w-1/3 animate-pulse" />
-                </div>
-              </div>
+                  {/* Bottom simulated metadata */}
+                  <div className="z-10 space-y-2 border-t border-white/5 pt-2">
+                    <div className="flex items-center justify-between text-[10px] text-gray-400">
+                      <span className="font-semibold text-white/95">@reels_creator</span>
+                      <span>Audio: {selectedMusic === 'none' ? 'None' : 'Library Track'}</span>
+                    </div>
+                    
+                    {/* Progress simulator bar */}
+                    <div className="w-full bg-white/10 h-1 rounded overflow-hidden">
+                      <div className="bg-purple-500 h-full w-1/3 animate-pulse" />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
             
             <p className="text-xs text-gray-500 mt-4 text-center max-w-[280px] leading-relaxed">
-              Visual details, text overlay transitions, and voice parameters will be rendered exactly on the server after submitting.
+              {textStoryMode
+                ? 'Text Story Mode: Bold text will fill the entire video frame — perfect for viral story reels.'
+                : 'Visual details, text overlay transitions, and voice parameters will be rendered exactly on the server after submitting.'}
             </p>
           </div>
         </div>

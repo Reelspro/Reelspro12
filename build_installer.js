@@ -35,7 +35,7 @@ SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
 
 [Files]
-Source: "*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "\\.git\\*,\\dist-release\\*,\\output\\*,\\node_modules\\.cache\\*,\\backend\\storage\\reels\\*,\\backend\\temp\\*,*.iss,build_installer.js,ReelsPro-Setup-*.exe"
+Source: "*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "\\.git\\*,\\dist-release\\*,\\output\\*,\\node_modules\\.cache\\*,\\backend\\storage\\reels\\*,\\backend\\temp\\*,*.iss,build_installer.js,ReelsPro-Setup-*.exe,reels_pro.db,.env"
 
 [Icons]
 Name: "{group}\\ReelsPro"; Filename: "{app}\\start.bat"; IconFilename: "{sys}\\cmd.exe"
