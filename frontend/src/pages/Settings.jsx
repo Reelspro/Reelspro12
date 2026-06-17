@@ -1,9 +1,49 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useAuthStore from '../store/authStore';
 import { User, Mail, Shield, KeyRound, LogOut, Settings as SettingsIcon } from 'lucide-react';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const Settings = () => {
   const { user, logout } = useAuthStore();
+  const [isChanging, setIsChanging] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match!");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters long!");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/auth/update-password`, {
+        currentPassword,
+        newPassword
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Password changed successfully!");
+      setIsChanging(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to update password");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -62,7 +102,7 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* Security Section Placeholder */}
+          {/* Security Section */}
           <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-xl">
             <div className="p-6 border-b border-gray-700 bg-gray-800/50">
               <h2 className="text-xl font-bold flex items-center gap-2">
@@ -75,10 +115,74 @@ const Settings = () => {
                   <h3 className="font-bold mb-1">Change Password</h3>
                   <p className="text-sm text-gray-400">Update your account password to stay secure.</p>
                 </div>
-                <button disabled className="bg-gray-700 text-gray-400 px-4 py-2 rounded-lg cursor-not-allowed">
-                  Coming Soon
-                </button>
+                {!isChanging && (
+                  <button 
+                    onClick={() => setIsChanging(true)}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition"
+                  >
+                    Change Password
+                  </button>
+                )}
               </div>
+
+              {isChanging && (
+                <form onSubmit={handlePasswordChange} className="space-y-4 mt-6 border-t border-gray-700 pt-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Current Password</label>
+                    <input 
+                      type="password"
+                      required
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">New Password</label>
+                    <input 
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Confirm New Password</label>
+                    <input 
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <div className="flex gap-3 justify-end pt-2">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setIsChanging(false);
+                        setCurrentPassword('');
+                        setNewPassword('');
+                        setConfirmPassword('');
+                      }}
+                      className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition text-sm font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition text-sm font-medium flex items-center gap-2"
+                    >
+                      {isSubmitting ? 'Updating...' : 'Update Password'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
 

@@ -399,6 +399,39 @@ const updateSystemSettings = (req, res) => {
   }
 };
 
+// @desc    Update user password
+// @route   PUT /api/auth/update-password
+// @access  Private
+const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Please provide current and new passwords' });
+    }
+
+    const user = dbHelper.findOne('users', 'id', req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    dbHelper.update('users', user.id, { password: hashedPassword });
+    await logActivity(user.id, 'PASSWORD_CHANGED', 'User changed their password');
+
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update password' });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -410,5 +443,6 @@ module.exports = {
   updateUserRole,
   deleteUser,
   getSystemSettings,
-  updateSystemSettings
+  updateSystemSettings,
+  updatePassword
 };
