@@ -89,88 +89,97 @@ async function generateCardImage({ storyText, theme = 'dark', username = 'Reddit
       return outputPath;
     }
 
-    // Card background params
-    const cx = 55, cy = 260, cw = CANVAS_W - 110, ch = CANVAS_H - 380;
-    const cr = custom?.bg?.radius !== undefined ? custom.bg.radius : 32;
-    const cardPadding = custom?.bg?.padding !== undefined ? custom.bg.padding : 44;
-    const alpha = custom?.bg?.alpha !== undefined ? (custom.bg.alpha / 100) : 0.95;
+    const isTextStoryMode = themeData?.textStoryMode === true || themeData?.fullPageMode === true;
 
-    ctx.beginPath();
-    ctx.moveTo(cx+cr, cy);
-    ctx.lineTo(cx+cw-cr, cy); ctx.quadraticCurveTo(cx+cw, cy, cx+cw, cy+cr);
-    ctx.lineTo(cx+cw, cy+ch-cr); ctx.quadraticCurveTo(cx+cw, cy+ch, cx+cw-cr, cy+ch);
-    ctx.lineTo(cx+cr, cy+ch); ctx.quadraticCurveTo(cx, cy+ch, cx, cy+ch-cr);
-    ctx.lineTo(cx, cy+cr); ctx.quadraticCurveTo(cx, cy, cx+cr, cy);
-    ctx.closePath();
-    ctx.fillStyle = T.card + Math.round(alpha * 255).toString(16).padStart(2, '0');
-    ctx.fill();
-    ctx.strokeStyle = T.border;
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    if (!isTextStoryMode) {
+      // Card background params
+      const cx = 55, cy = 260, cw = CANVAS_W - 110, ch = CANVAS_H - 380;
+      const cr = custom?.bg?.radius !== undefined ? custom.bg.radius : 32;
+      const alpha = custom?.bg?.alpha !== undefined ? (custom.bg.alpha / 100) : 0.95;
 
-    // Profile Header Section (if enabled)
-    if (custom?.bg?.showProfile !== false) {
-      ctx.fillStyle = T.accent + '33';
-      ctx.fillRect(cx, cy, cw, 115);
+      ctx.beginPath();
+      ctx.moveTo(cx+cr, cy);
+      ctx.lineTo(cx+cw-cr, cy); ctx.quadraticCurveTo(cx+cw, cy, cx+cw, cy+cr);
+      ctx.lineTo(cx+cw, cy+ch-cr); ctx.quadraticCurveTo(cx+cw, cy+ch, cx+cw-cr, cy+ch);
+      ctx.lineTo(cx+cr, cy+ch); ctx.quadraticCurveTo(cx, cy+ch, cx, cy+ch-cr);
+      ctx.lineTo(cx, cy+cr); ctx.quadraticCurveTo(cx, cy, cx+cr, cy);
+      ctx.closePath();
+      ctx.fillStyle = T.card + Math.round(alpha * 255).toString(16).padStart(2, '0');
+      ctx.fill();
+      ctx.strokeStyle = T.border;
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-      // Draw avatar
-      let avatarDrawn = false;
-      if (custom?.profile?.avatar && fs.existsSync(custom.profile.avatar)) {
-        try {
-          const avImg = await loadImage(custom.profile.avatar);
-          ctx.save();
+      // Profile Header Section (if enabled)
+      if (custom?.bg?.showProfile !== false) {
+        ctx.fillStyle = T.accent + '33';
+        ctx.fillRect(cx, cy, cw, 115);
+
+        // Draw avatar
+        let avatarDrawn = false;
+        if (custom?.profile?.avatar && fs.existsSync(custom.profile.avatar)) {
+          try {
+            const avImg = await loadImage(custom.profile.avatar);
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx + 65, cy + 57, 36, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(avImg, cx + 29, cy + 21, 72, 72);
+            ctx.restore();
+            avatarDrawn = true;
+          } catch (_) {}
+        }
+
+        if (!avatarDrawn) {
           ctx.beginPath();
           ctx.arc(cx + 65, cy + 57, 36, 0, Math.PI * 2);
-          ctx.clip();
-          ctx.drawImage(avImg, cx + 29, cy + 21, 72, 72);
-          ctx.restore();
-          avatarDrawn = true;
-        } catch (_) {}
-      }
+          ctx.fillStyle = T.accent;
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 34px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(username[0].toUpperCase(), cx + 65, cy + 59);
+        }
 
-      if (!avatarDrawn) {
-        ctx.beginPath();
-        ctx.arc(cx + 65, cy + 57, 36, 0, Math.PI * 2);
-        ctx.fillStyle = T.accent;
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 34px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(username[0].toUpperCase(), cx + 65, cy + 59);
+        // Username + handle
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = T.username;
+        
+        const profFontName = custom?.profile?.font || 'sans-serif';
+        const profFontSize = custom?.profile?.size || 34;
+        ctx.font = `bold ${profFontSize}px "${profFontName}", sans-serif`;
+        ctx.fillText(username, cx + 122, cy + 48);
+        
+        ctx.fillStyle = T.handle;
+        ctx.font = '26px sans-serif';
+        ctx.fillText(handle, cx + 122, cy + 84);
       }
-
-      // Username + handle
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'alphabetic';
-      ctx.fillStyle = T.username;
-      
-      const profFontName = custom?.profile?.font || 'sans-serif';
-      const profFontSize = custom?.profile?.size || 34;
-      ctx.font = `bold ${profFontSize}px "${profFontName}", sans-serif`;
-      ctx.fillText(username, cx + 122, cy + 48);
-      
-      ctx.fillStyle = T.handle;
-      ctx.font = '26px sans-serif';
-      ctx.fillText(handle, cx + 122, cy + 84);
     }
 
     // Story text wraps
-    const txtX = cx + cardPadding;
-    const txtY = cy + 140;
-    const txtMaxW = cw - (cardPadding * 2);
-    const fontSize = custom?.text?.size || 46;
-    const lineH = custom?.text?.lineH ? Math.round(custom.text.lineH * fontSize) : 74;
+    const cardPadding = custom?.bg?.padding !== undefined ? custom.bg.padding : 44;
+    const cx = 55, cy = 260, cw = CANVAS_W - 110, ch = CANVAS_H - 380;
+    const txtX = isTextStoryMode ? 80 : (cx + cardPadding);
+    const txtMaxW = isTextStoryMode ? (CANVAS_W - 160) : (cw - (cardPadding * 2));
+    const fontSize = isTextStoryMode ? 64 : (custom?.text?.size || 46);
+    const lineH = isTextStoryMode ? 90 : (custom?.text?.lineH ? Math.round(custom.text.lineH * fontSize) : 74);
     const fontName = custom?.text?.font || 'sans-serif';
-    const weight = custom?.text?.weight || 'Normal';
-    const align = custom?.text?.align?.toLowerCase() || 'left';
+    const weight = isTextStoryMode ? 'Bold' : (custom?.text?.weight || 'Normal');
+    const align = isTextStoryMode ? 'center' : (custom?.text?.align?.toLowerCase() || 'left');
 
     ctx.font = `${weight === 'Bold' ? 'bold ' : weight === 'Italic' ? 'italic ' : ''}${fontSize}px "${fontName}", sans-serif`;
     ctx.textBaseline = 'top';
 
     const segs = parseHighlights(storyText);
     const lines = wrapSegments(ctx, segs, txtMaxW);
-    const maxLines = Math.floor((ch - 230) / lineH);
+    
+    // Vertically center the text if full page mode
+    const totalLines = lines.length;
+    const totalTextHeight = totalLines * lineH;
+    const txtY = isTextStoryMode ? ((CANVAS_H - totalTextHeight) / 2) : (cy + 140);
+    const maxLines = isTextStoryMode ? Math.floor((CANVAS_H - 200) / lineH) : Math.floor((ch - 230) / lineH);
 
     let y = txtY;
     for (const line of lines.slice(0, maxLines)) {
@@ -178,10 +187,10 @@ async function generateCardImage({ storyText, theme = 'dark', username = 'Reddit
       // Handle simple centering or alignment offsets
       if (align === 'center') {
         const lineWidth = line.reduce((acc, seg) => acc + ctx.measureText(seg.text).width, 0);
-        x = cx + (cw - lineWidth) / 2;
+        x = isTextStoryMode ? (CANVAS_W - lineWidth) / 2 : cx + (cw - lineWidth) / 2;
       } else if (align === 'right') {
         const lineWidth = line.reduce((acc, seg) => acc + ctx.measureText(seg.text).width, 0);
-        x = cx + cw - cardPadding - lineWidth;
+        x = isTextStoryMode ? (CANVAS_W - 80 - lineWidth) : (cx + cw - cardPadding - lineWidth);
       }
 
       for (const seg of line) {
@@ -200,7 +209,7 @@ async function generateCardImage({ storyText, theme = 'dark', username = 'Reddit
     }
 
     // CTA bar footer (if enabled)
-    if (custom?.footer?.show !== false) {
+    if (!isTextStoryMode && custom?.footer?.show !== false) {
       const ctaY = cy + ch - 82;
       ctx.fillStyle = (custom?.footer?.bgColor || T.accent) + 'cc';
       ctx.beginPath();
@@ -214,12 +223,14 @@ async function generateCardImage({ storyText, theme = 'dark', username = 'Reddit
     }
 
     // Scene progress dots
-    const dotY = CANVAS_H - 95;
-    for (let i = 0; i < totalScenes; i++) {
-      ctx.beginPath();
-      ctx.arc(CANVAS_W/2 - (totalScenes - 1) * 14 + i * 28, dotY, i === sceneIndex ? 9 : 5, 0, Math.PI * 2);
-      ctx.fillStyle = i === sceneIndex ? T.accent : T.border;
-      ctx.fill();
+    if (!isTextStoryMode) {
+      const dotY = CANVAS_H - 95;
+      for (let i = 0; i < totalScenes; i++) {
+        ctx.beginPath();
+        ctx.arc(CANVAS_W/2 - (totalScenes - 1) * 14 + i * 28, dotY, i === sceneIndex ? 9 : 5, 0, Math.PI * 2);
+        ctx.fillStyle = i === sceneIndex ? T.accent : T.border;
+        ctx.fill();
+      }
     }
 
     const buf = canvas.toBuffer('image/png');

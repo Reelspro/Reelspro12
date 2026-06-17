@@ -90,7 +90,8 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
       username: ts?.username || 'Reddit Stories',
       avatarUrl: ts?.avatarUrl || null,
       footerText: ts?.footerText || 'Full Story In First Comment 👇',
-      sfx: ts?.sfx || []
+      sfx: ts?.sfx || [],
+      fullPageMode: ts?.fullPageMode || false
     };
 
     // Generate voiceover for text stories if voice is selected

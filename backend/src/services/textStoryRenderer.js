@@ -390,14 +390,21 @@ function renderStoryFrame(config) {
   // 2. Subtle decorative pattern
   drawSubtlePattern(ctx, config.patternId || 'pink_floral', W, H);
 
-  // 3. Header
-  drawHeader(ctx, config);
+  const isFullPage = config.fullPageMode === true;
+
+  // 3. Header (only if not full page mode)
+  if (!isFullPage) {
+    drawHeader(ctx, config);
+  }
 
   // 4. Body text segments
-  let FONT_SIZE = 52;
+  let FONT_SIZE = isFullPage ? 60 : 52;
   let LINE_H = Math.round(FONT_SIZE * 1.45);
   const maxTextW = W - PAD * 2;
-  const availableHeight = BODY_BOTTOM - BODY_TOP - 40;
+  
+  const bodyTop = isFullPage ? 100 : BODY_TOP;
+  const bodyBottom = isFullPage ? H - 100 : BODY_BOTTOM;
+  const availableHeight = bodyBottom - bodyTop - 40;
   const segments = config.textSegments || [];
 
   // Helper: strip any raw <highlight> tags that weren't parsed
@@ -444,7 +451,7 @@ function renderStoryFrame(config) {
 
   // Calculate total text height for vertical centering
   const totalTextH = calcProjectedHeight(FONT_SIZE);
-  const centerStart = BODY_TOP + Math.max(0, (availableHeight - totalTextH) / 2) + FONT_SIZE;
+  const centerStart = bodyTop + Math.max(0, (availableHeight - totalTextH) / 2) + FONT_SIZE;
 
   let y = centerStart;
   const accentColor = config.accentColor || '#B22222';
@@ -456,13 +463,14 @@ function renderStoryFrame(config) {
     const rawText = cleanTag(seg.text || '');
 
     // Stop if we've hit the footer zone
-    if (y > BODY_BOTTOM - FONT_SIZE) break;
+    if (y > bodyBottom - FONT_SIZE) break;
 
     if (isCTA) {
+      if (isFullPage) continue; // Skip CTA in full page mode
       ctx.font = `900 40px Arial`;
       ctx.fillStyle = accentColor;
       ctx.textAlign = 'right';
-      const ctaY = Math.max(y + LINE_H, BODY_BOTTOM - LINE_H);
+      const ctaY = Math.max(y + LINE_H, bodyBottom - LINE_H);
       ctx.fillText(rawText || 'Read More.....', W - PAD, ctaY);
       ctx.textAlign = 'left';
       y = ctaY + LINE_H;
@@ -479,7 +487,14 @@ function renderStoryFrame(config) {
       ctx.fillStyle = config.textColor || '#1A1A1A';
     }
 
-    y = drawWrappedSegment(ctx, rawText, PAD, y, maxTextW, LINE_H, highlight);
+    // Force centered alignment for full page mode
+    if (isFullPage) {
+      ctx.textAlign = 'center';
+      y = drawWrappedSegment(ctx, rawText, W / 2, y, maxTextW, LINE_H, highlight);
+      ctx.textAlign = 'left';
+    } else {
+      y = drawWrappedSegment(ctx, rawText, PAD, y, maxTextW, LINE_H, highlight);
+    }
 
     // Extra gap between segments (paragraph spacing)
     if (si < segments.length - 1 && segments[si + 1]?.style !== 'cta') {
@@ -487,8 +502,10 @@ function renderStoryFrame(config) {
     }
   }
 
-  // 5. Footer
-  drawFooter(ctx, config.footerText);
+  // 5. Footer (only if not full page mode)
+  if (!isFullPage) {
+    drawFooter(ctx, config.footerText);
+  }
 
   return canvas.toBuffer('image/png');
 }
@@ -624,6 +641,7 @@ async function renderTextStoryReel(reelData, outputPath, options = {}) {
     username: reelData.username || 'Story User',
     footerText: reelData.footerText || 'Full Story In First Comment \uD83D\uDC47',
     avatarImg,
+    fullPageMode: reelData.fullPageMode || false
   };
 
   // Build per-scene configs
