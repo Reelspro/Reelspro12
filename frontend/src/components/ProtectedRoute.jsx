@@ -1,9 +1,74 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import LiveRenderQueue from './LiveRenderQueue';
 import { motion } from 'framer-motion';
-import { Clock, CheckCircle, Sparkles, Shield, LogOut, Ban } from 'lucide-react';
+import { Clock, CheckCircle, Sparkles, Shield, LogOut, Ban, ArrowLeft, LayoutDashboard } from 'lucide-react';
+
+// ─── Global Floating Back Button ──────────────────────────────────────────────
+const GlobalBackButton = ({ user }) => {
+  const { pathname } = useLocation();
+
+  // Pages where back button should NOT show
+  const noBackPages = ['/dashboard', '/admin/dashboard'];
+  if (noBackPages.includes(pathname)) return null;
+
+  // Admin sub-pages → go back to admin dashboard
+  const isAdminPage = pathname.startsWith('/admin/');
+  const backTo   = isAdminPage ? '/admin/dashboard' : '/dashboard';
+  const label    = isAdminPage ? 'Admin Panel' : 'Dashboard';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay: 0.1 }}
+      style={{
+        position: 'fixed',
+        top: 18,
+        left: 18,
+        zIndex: 9000,
+      }}
+    >
+      <Link
+        to={backTo}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7,
+          padding: '8px 14px',
+          borderRadius: 12,
+          background: 'rgba(15,15,30,0.85)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(99,102,241,0.25)',
+          color: '#a5b4fc',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          fontSize: 13,
+          fontWeight: 600,
+          textDecoration: 'none',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          transition: 'all 0.2s',
+          whiteSpace: 'nowrap',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = 'rgba(99,102,241,0.18)';
+          e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)';
+          e.currentTarget.style.color = '#c7d2fe';
+          e.currentTarget.style.transform = 'translateX(-2px)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = 'rgba(15,15,30,0.85)';
+          e.currentTarget.style.borderColor = 'rgba(99,102,241,0.25)';
+          e.currentTarget.style.color = '#a5b4fc';
+          e.currentTarget.style.transform = 'translateX(0)';
+        }}
+      >
+        <ArrowLeft size={15} />
+        {label}
+      </Link>
+    </motion.div>
+  );
+};
 
 // ─── Premium Pending Screen ────────────────────────────────────────────────────
 const PendingScreen = ({ user }) => {
@@ -167,6 +232,7 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
 
   return (
     <>
+      <GlobalBackButton user={user} />
       <Outlet />
       <LiveRenderQueue />
     </>
