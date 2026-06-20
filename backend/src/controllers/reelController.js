@@ -57,7 +57,8 @@ const generateReel = async (req, res) => {
       }
     }
 
-    const isCustomStory = !!(customization.storyMakerCustom);
+    const textStoryModeActive = customization.textStoryMode !== false; // default to true
+    const isCustomStory = !!(customization.storyMakerCustom) || textStoryModeActive || customization.fullPageMode === true;
 
     if (isCustomStory) {
       // Direct splitting of the user's custom story text

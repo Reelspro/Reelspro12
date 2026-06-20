@@ -43,7 +43,7 @@ export default function ReelGenerator() {
   const [selectedMusic, setSelectedMusic] = useState('none');
   const [storyTitle, setStoryTitle] = useState('');
   const [storyContent, setStoryContent] = useState('');
-  const [textStoryMode, setTextStoryMode] = useState(false); // Full page text story display
+  const [textStoryMode, setTextStoryMode] = useState(true); // Full page text story display
 
   // Articles & Music options
   const [articles, setArticles] = useState([]);

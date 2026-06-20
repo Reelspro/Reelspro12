@@ -189,7 +189,8 @@ async function renderReelJob({ reelId, userId, articleId, scenesJson, musicPath,
 
   // Step B: Generate background-only image or full card image for each scene
   const bgPaths = [];
-  const isCardStyle = !!(themeData?.storyMakerCustom);
+  const isTextStoryMode = themeData?.textStoryMode !== false; // default to true
+  const isCardStyle = !!(themeData?.storyMakerCustom) || isTextStoryMode;
 
   // Resolve profile avatar if card style is active
   if (isCardStyle && themeData?.profile?.avatar) {
