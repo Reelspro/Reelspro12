@@ -14,14 +14,28 @@ if (!fs.existsSync(releaseDir)) {
   fs.mkdirSync(releaseDir, { recursive: true });
 }
 
-console.log(`[1/4] Building frontend for v${version}...`);
+// Step 1: Build frontend
+console.log(`[1/5] Building frontend for v${version}...`);
 try {
   execSync('npm run build', { cwd: path.join(rootDir, 'frontend'), stdio: 'inherit' });
 } catch (err) {
   console.log('Frontend build failed or skipped. Continuing...');
 }
 
-console.log('[2/4] Generating Inno Setup Script...');
+// Step 2: Make sure backend node_modules are production-ready
+console.log('[2/5] Installing backend production dependencies...');
+try {
+  execSync('npm install --production --no-audit --no-fund', { 
+    cwd: path.join(rootDir, 'backend'), 
+    stdio: 'inherit' 
+  });
+  console.log('Backend dependencies ready.');
+} catch (err) {
+  console.warn('Backend npm install warning:', err.message);
+}
+
+// Step 3: Generate Inno Setup Script with node_modules included
+console.log('[3/5] Generating Inno Setup Script...');
 const issContent = `
 [Setup]
 AppName=ReelsPro
@@ -32,36 +46,62 @@ OutputDir=dist-release
 OutputBaseFilename=ReelsPro-Setup-${version}
 Compression=lzma2
 SolidCompression=yes
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64os
+
+WizardStyle=modern
+DisableWelcomePage=no
+DisableDirPage=no
 
 [Files]
-Source: "*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "\\.git\\*,\\dist-release\\*,\\output\\*,\\node_modules\\.cache\\*,\\backend\\storage\\reels\\*,\\backend\\temp\\*,*.iss,build_installer.js,ReelsPro-Setup-*.exe,reels_pro.db,.env"
+; All project files (excluding git, dist, temp, user data, dev tools)
+Source: "*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "\\.git\\*,\\dist-release\\*,\\output\\*,\\backend\\storage\\reels\\*,\\backend\\temp\\*,*.iss,build_installer.js,build_clean_installer.js,ReelsPro-Setup-*.exe,reels_pro.db,.env,\\node_modules\\.cache\\*,\\frontend\\node_modules\\*,\\scratch\\*"
 
 [Icons]
-Name: "{group}\\ReelsPro"; Filename: "{app}\\start.bat"; IconFilename: "{sys}\\cmd.exe"
-Name: "{autodesktop}\\ReelsPro"; Filename: "{app}\\start.bat"; IconFilename: "{sys}\\cmd.exe"; Tasks: desktopicon
+Name: "{group}\\ReelsPro"; Filename: "{app}\\launcher.vbs"
+Name: "{autodesktop}\\ReelsPro"; Filename: "{app}\\launcher.vbs"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional icons:"; Flags: unchecked
 
 [Run]
-Filename: "{app}\\setup.bat"; Description: "Run Setup (Install Node dependencies if missing)"; Flags: postinstall waituntilterminated
-Filename: "{app}\\start.bat"; Description: "Launch ReelsPro"; Flags: postinstall nowait
+Filename: "{app}\\launcher.vbs"; Description: "Launch ReelsPro"; Flags: postinstall nowait shellexec
+
+[Registry]
+Root: HKCU; Subkey: "Software\\Microsoft\\Windows\\CurrentVersion\\Run"; ValueType: string; ValueName: "ReelsPro"; ValueData: "wscript.exe ""{app}\\launcher.vbs"""; Flags: uninsdeletevalue; Tasks:
 `;
 
 fs.writeFileSync(path.join(rootDir, 'installer.iss'), issContent);
 
-console.log('[3/4] Compiling Installer (This may take a minute or two)...');
-const isccPath = '"' + path.join(process.env.LOCALAPPDATA, 'Programs', 'Inno Setup 6', 'ISCC.exe') + '"';
+// Step 4: Compile installer
+console.log('[4/5] Compiling Installer (This may take several minutes - node_modules included)...');
+
+// Try common Inno Setup locations
+const isccPaths = [
+  path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Inno Setup 6', 'ISCC.exe'),
+  'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe',
+  'C:\\Program Files\\Inno Setup 6\\ISCC.exe',
+];
+
+let isccPath = null;
+for (const p of isccPaths) {
+  if (fs.existsSync(p)) { isccPath = p; break; }
+}
+
+if (!isccPath) {
+  console.error('ERROR: Inno Setup 6 not found! Please install it from https://jrsoftware.org/isinfo.php');
+  process.exit(1);
+}
+
 try {
-  execSync(`${isccPath} installer.iss`, { cwd: rootDir, stdio: 'inherit' });
+  execSync(`"${isccPath}" installer.iss`, { cwd: rootDir, stdio: 'inherit' });
   console.log('Installer compiled successfully!');
 } catch (error) {
   console.error('Failed to compile installer:', error.message);
   process.exit(1);
 }
 
-console.log('[4/4] Generating latest.yml...');
+// Step 5: Generate latest.yml for auto-updater
+console.log('[5/5] Generating latest.yml...');
 const exeBuffer = fs.readFileSync(exePath);
 const hash = crypto.createHash('sha512').update(exeBuffer).digest('base64');
 const size = fs.statSync(exePath).size;
@@ -78,6 +118,7 @@ releaseDate: '${new Date().toISOString()}'
 
 fs.writeFileSync(path.join(rootDir, 'latest.yml'), latestYmlContent);
 
-console.log('Done! Generated:');
+console.log('\n✅ Done! Generated:');
 console.log(` - dist-release\\${exeName} (${(size/1024/1024).toFixed(2)} MB)`);
 console.log(' - latest.yml');
+console.log('\nThis installer includes node_modules - no internet required on target machine!');
