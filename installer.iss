@@ -1,11 +1,11 @@
 
 [Setup]
 AppName=ReelsPro
-AppVersion=1.3.0
+AppVersion=1.4.0
 DefaultDirName={autopf}\ReelsPro
 DefaultGroupName=ReelsPro
 OutputDir=dist-release
-OutputBaseFilename=ReelsPro-Setup-1.3.0
+OutputBaseFilename=ReelsPro-Setup-1.4.0
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64os
