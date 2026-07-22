@@ -112,21 +112,34 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [registered, setRegistered] = useState(false);
   const [registeredName, setRegisteredName] = useState('');
-  const { register, user, logout, isLoading } = useAuthStore();
+  
+  // OTP States
+  const [verifyMode, setVerifyMode] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [registeredEmail, setRegisteredEmail] = useState('');
+
+  const { register, verifyOTP, logout, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const success = await register(name, email, password);
+    const result = await register(name, email, password);
+    if (result.success) {
+      setRegisteredName(name);
+      setRegisteredEmail(result.email || email);
+      setVerifyMode(true);
+    }
+  };
+
+  const handleVerifySubmit = async (e) => {
+    e.preventDefault();
+    const success = await verifyOTP(registeredEmail, otpCode);
     if (success) {
-      // Read the freshly stored user from the store
       const currentUser = useAuthStore.getState().user;
       if (currentUser?.status === 'pending') {
-        // Show beautiful pending screen — do NOT navigate to dashboard
-        setRegisteredName(currentUser.name || name);
         setRegistered(true);
+        setVerifyMode(false);
       } else {
-        // Auto-approved (first admin user or auto-approve enabled)
         navigate('/dashboard');
       }
     }
@@ -141,6 +154,76 @@ const Register = () => {
   if (registered) {
     return <PendingApprovalScreen userName={registeredName} onLogout={handleLogout} />;
   }
+
+  // OTP Verification view
+  if (verifyMode) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white p-4 relative overflow-hidden">
+        <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+
+        <motion.div
+          key="otp-form"
+          initial={{ opacity: 0, y: 20, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="relative bg-gray-900 border border-gray-700/60 rounded-3xl shadow-2xl max-w-md w-full p-8"
+        >
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center">
+              <Mail size={28} className="text-blue-400 animate-pulse" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+              Verify Email
+            </h1>
+            <p className="text-gray-500 text-sm mt-2">
+              We have sent a 6-digit OTP code to <br/>
+              <strong className="text-blue-400">{registeredEmail}</strong>
+            </p>
+          </div>
+
+          <form onSubmit={handleVerifySubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-center text-sm font-medium text-gray-300">Enter Verification Code</label>
+              <input
+                type="text"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').substring(0, 6))}
+                placeholder="------"
+                className="w-full text-center tracking-[12px] font-bold text-2xl bg-gray-800 border border-gray-700 rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition placeholder-gray-600"
+                required
+              />
+            </div>
+
+            <motion.button
+              type="submit"
+              disabled={isLoading || otpCode.length !== 6}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition duration-200 text-sm"
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Verifying...
+                </span>
+              ) : 'Verify Code'}
+            </motion.button>
+          </form>
+
+          <p className="mt-5 text-center text-sm text-gray-500">
+            Wrong email address?{' '}
+            <button 
+              onClick={() => setVerifyMode(false)} 
+              className="text-blue-400 hover:text-blue-300 font-medium transition"
+            >
+              Go back
+            </button>
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white p-4 relative overflow-hidden">

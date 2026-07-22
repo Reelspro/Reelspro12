@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   registerUser,
+  verifyOTP,
   loginUser,
   getUserProfile,
   getPendingUsers,
@@ -13,6 +14,7 @@ const { protect, admin } = require('../middleware/authMiddleware');
 const { authLimiter } = require('../middleware/securityMiddleware');
 
 router.post('/register', authLimiter, registerUser);
+router.post('/verify-otp', authLimiter, verifyOTP);
 router.post('/login', authLimiter, loginUser);
 router.get('/profile', protect, getUserProfile);
 router.put('/update-password', protect, updatePassword);

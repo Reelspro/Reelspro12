@@ -249,6 +249,11 @@ const runMigrations = () => {
   safeAlter(`ALTER TABLE website_sources ADD COLUMN article_count INTEGER DEFAULT 0`);
   safeAlter(`ALTER TABLE website_sources ADD COLUMN scrape_interval INTEGER DEFAULT 3600`);
 
+  // OTP columns for signup verification
+  safeAlter(`ALTER TABLE users ADD COLUMN otp TEXT`);
+  safeAlter(`ALTER TABLE users ADD COLUMN otp_expires DATETIME`);
+
+
   // Indexes for performance
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

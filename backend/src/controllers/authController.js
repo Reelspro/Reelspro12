@@ -15,9 +15,11 @@ const stripPassword = (u) => {
   return rest;
 };
 
-// @desc    Register a new user
+// @desc    Register a new user (with OTP verification)
 // @route   POST /api/auth/register
 // @access  Public
+const { sendOTPEmail } = require('../services/emailService');
+
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -33,20 +35,35 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 mins expiry
+
     const allUsers = dbHelper.findAll('users');
-    const systemSettings = db.prepare('SELECT auto_approve_users FROM system_settings WHERE id = 1').get();
-    const autoApprove = systemSettings ? !!systemSettings.auto_approve_users : false;
     
+    // First user is automatically approved admin, bypasses OTP verification
     const role = allUsers.length === 0 ? 'admin' : 'user';
-    let status = allUsers.length === 0 ? 'approved' : 'pending';
-    
-    if (autoApprove && role === 'user') {
-      status = 'approved';
-    }
+    const status = allUsers.length === 0 ? 'approved' : 'pending_otp';
 
     const user = dbHelper.insert('users', {
-      name, email, password: hashedPassword, role, status
+      name, 
+      email, 
+      password: hashedPassword, 
+      role, 
+      status,
+      otp: role === 'admin' ? null : otpCode,
+      otp_expires: role === 'admin' ? null : otpExpires
     });
+
+    if (role !== 'admin') {
+      // Send OTP Email
+      await sendOTPEmail(email, otpCode, name);
+      return res.status(201).json({
+        message: 'OTP sent to email. Please verify to activate account.',
+        email: user.email,
+        status: user.status
+      });
+    }
 
     res.status(201).json({
       id: user.id, name: user.name, email: user.email,
@@ -58,6 +75,59 @@ const registerUser = async (req, res) => {
     res.status(500).json({ error: 'Server error during registration' });
   }
 };
+
+// @desc    Verify OTP for account creation
+// @route   POST /api/auth/verify-otp
+// @access  Public
+const verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Please provide email and OTP code' });
+    }
+
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.status !== 'pending_otp') {
+      return res.status(400).json({ error: 'Account already verified or active' });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ error: 'Invalid verification OTP code' });
+    }
+
+    const expires = new Date(user.otp_expires);
+    if (expires < new Date()) {
+      return res.status(400).json({ error: 'OTP code has expired' });
+    }
+
+    // Check system settings for auto approval
+    const systemSettings = db.prepare('SELECT auto_approve_users FROM system_settings WHERE id = 1').get();
+    const autoApprove = systemSettings ? !!systemSettings.auto_approve_users : false;
+    const finalStatus = autoApprove ? 'approved' : 'pending';
+
+    // Update user status and clear OTP
+    db.prepare('UPDATE users SET status = ?, otp = NULL, otp_expires = NULL WHERE id = ?')
+      .run(finalStatus, user.id);
+
+    res.status(200).json({
+      message: 'OTP verified successfully!',
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: finalStatus,
+      token: generateToken(user.id, user.role, finalStatus)
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error during OTP verification' });
+  }
+};
+
 
 // @desc    Authenticate a user
 // @route   POST /api/auth/login
