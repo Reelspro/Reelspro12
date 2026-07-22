@@ -533,6 +533,7 @@ const updatePassword = async (req, res) => {
 
 module.exports = {
   registerUser,
+  verifyOTP,
   loginUser,
   getUserProfile,
   getPendingUsers,
@@ -545,3 +546,4 @@ module.exports = {
   updateSystemSettings,
   updatePassword
 };
+
