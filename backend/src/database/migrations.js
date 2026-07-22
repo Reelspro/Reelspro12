@@ -344,7 +344,12 @@ const runMigrations = () => {
     "ALTER TABLE system_settings ADD COLUMN storage_type TEXT DEFAULT 'local'",
     "ALTER TABLE system_settings ADD COLUMN default_theme TEXT DEFAULT 'modern'",
     "ALTER TABLE system_settings ADD COLUMN max_concurrent_renders INTEGER DEFAULT 3",
-    "ALTER TABLE system_settings ADD COLUMN rate_limit_requests INTEGER DEFAULT 100"
+    "ALTER TABLE system_settings ADD COLUMN rate_limit_requests INTEGER DEFAULT 100",
+    "ALTER TABLE system_settings ADD COLUMN smtp_host TEXT DEFAULT 'smtp.gmail.com'",
+    "ALTER TABLE system_settings ADD COLUMN smtp_port INTEGER DEFAULT 587",
+    "ALTER TABLE system_settings ADD COLUMN smtp_user TEXT DEFAULT ''",
+    "ALTER TABLE system_settings ADD COLUMN smtp_pass TEXT DEFAULT ''",
+    "ALTER TABLE system_settings ADD COLUMN smtp_secure BOOLEAN DEFAULT 0"
   ];
   for (const sql of settingsMigrations) {
     try { db.prepare(sql).run(); } catch (e) {}

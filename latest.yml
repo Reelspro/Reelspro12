@@ -1,8 +1,8 @@
-version: 1.4.0
+version: 1.6.0
 files:
-  - url: ReelsPro-Setup-1.4.0.exe
-    sha512: D1fKE1sZCEKuVpMx58IxIE1O8eOfB2kUhijNAC50NWVG52Ro/LFeJQHPGAPDEwh6lc3Rjw5A9s5RgCWtgqeziA==
-    size: 1023758482
-path: ReelsPro-Setup-1.4.0.exe
-sha512: D1fKE1sZCEKuVpMx58IxIE1O8eOfB2kUhijNAC50NWVG52Ro/LFeJQHPGAPDEwh6lc3Rjw5A9s5RgCWtgqeziA==
-releaseDate: '2026-07-22T15:09:50.949Z'
+  - url: ReelsPro-Setup-1.6.0.exe
+    sha512: sPl6RTfeDO0hQ7/jHaOsc/07c2yALXEPMV3+ZgCZVmQec/51YdWfv8lrG9le3at7Rxiz9Zz4yP+sXvrZ8No6xQ==
+    size: 1023867410
+path: ReelsPro-Setup-1.6.0.exe
+sha512: sPl6RTfeDO0hQ7/jHaOsc/07c2yALXEPMV3+ZgCZVmQec/51YdWfv8lrG9le3at7Rxiz9Zz4yP+sXvrZ8No6xQ==
+releaseDate: '2026-07-22T17:36:42.039Z'

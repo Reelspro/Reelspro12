@@ -28,16 +28,29 @@ const registerUser = async (req, res) => {
     }
 
     const userExists = dbHelper.findOne('users', 'email', email);
-    if (userExists) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
+    
     // Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 mins expiry
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    if (userExists) {
+      // If user exists but is unverified (pending_otp or pending), update OTP & allow verification
+      if (userExists.status === 'pending_otp' || (userExists.status === 'pending' && userExists.role !== 'admin')) {
+        db.prepare("UPDATE users SET name = ?, password = ?, status = 'pending_otp', otp = ?, otp_expires = ? WHERE id = ?")
+          .run(name, hashedPassword, otpCode, otpExpires, userExists.id);
+
+        await sendOTPEmail(email, otpCode, name);
+
+        return res.status(200).json({
+          message: 'OTP sent to email. Please verify to activate account.',
+          email: userExists.email,
+          status: 'pending_otp'
+        });
+      }
+      return res.status(400).json({ error: 'User already exists and is active.' });
+    }
 
     const allUsers = dbHelper.findAll('users');
     
@@ -396,6 +409,7 @@ const getSystemSettings = (req, res) => {
       settings.maintenance_mode = !!settings.maintenance_mode;
       settings.update_available = !!settings.update_available;
       settings.force_update = !!settings.force_update;
+      settings.smtp_secure = !!settings.smtp_secure;
     }
     res.json(settings || {});
   } catch (error) {
@@ -421,6 +435,11 @@ const updateSystemSettings = (req, res) => {
       update_url,
       update_changelog,
       force_update,
+      smtp_host,
+      smtp_port,
+      smtp_user,
+      smtp_pass,
+      smtp_secure
     } = req.body;
 
     const stmt = db.prepare(`
@@ -436,6 +455,11 @@ const updateSystemSettings = (req, res) => {
           update_url = ?,
           update_changelog = ?,
           force_update = ?,
+          smtp_host = COALESCE(?, smtp_host, 'smtp.gmail.com'),
+          smtp_port = COALESCE(?, smtp_port, 587),
+          smtp_user = COALESCE(?, smtp_user, ''),
+          smtp_pass = COALESCE(?, smtp_pass, ''),
+          smtp_secure = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `);
@@ -451,7 +475,12 @@ const updateSystemSettings = (req, res) => {
       update_version != null ? update_version : '',
       update_url != null ? update_url : '',
       update_changelog != null ? update_changelog : '',
-      force_update ? 1 : 0
+      force_update ? 1 : 0,
+      smtp_host != null ? smtp_host : 'smtp.gmail.com',
+      smtp_port != null ? smtp_port : 587,
+      smtp_user != null ? smtp_user : '',
+      smtp_pass != null ? smtp_pass : '',
+      smtp_secure ? 1 : 0
     );
 
     const updated = db.prepare('SELECT * FROM system_settings WHERE id = 1').get();
