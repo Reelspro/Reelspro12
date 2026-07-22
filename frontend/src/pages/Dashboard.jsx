@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useAnalyticsStore from '../store/analyticsStore';
 import useSocketStore from '../store/socketStore';
 import LiveRenderQueue from '../components/LiveRenderQueue';
-import { Video, Download, MousePointerClick, TrendingUp, Settings, PlayCircle, BarChart3, Clock, Wifi, Link2, FileText } from 'lucide-react';
+import { Video, Download, MousePointerClick, TrendingUp, Settings, PlayCircle, BarChart3, Clock, Wifi, Link2, FileText, RefreshCw, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 
@@ -41,9 +41,11 @@ const AdminModuleCard = ({ title, description, link, icon: Icon, color }) => (
 );
 
 const Dashboard = () => {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const { topReels, topCategories, feed, fetchTopData, fetchFeed } = useAnalyticsStore();
   const { connect, isConnected, reelProgress, disconnect } = useSocketStore();
+  const [updateInfo, setUpdateInfo] = useState(null);
+  const [showUpdateBanner, setShowUpdateBanner] = useState(true);
 
   useEffect(() => {
     fetchTopData();
@@ -57,6 +59,24 @@ const Dashboard = () => {
     }
     return () => { /* keep connection alive across page navigations */ };
   }, [user?.id, user?.role, connect]);
+
+  // Check for updates on load
+  useEffect(() => {
+    const checkForUpdate = async () => {
+      try {
+        const res = await fetch(`${API_URL}/update/check`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.updateAvailable) {
+          setUpdateInfo(data);
+        }
+      } catch (e) {
+        // silently fail
+      }
+    };
+    if (token) checkForUpdate();
+  }, [token]);
 
   const activeJobs = Object.values(reelProgress || {}).filter(j => j?.status === 'processing').length;
 
@@ -102,7 +122,44 @@ const Dashboard = () => {
             </Link>
           </div>
         </div>
-        
+
+        {/* Update Banner */}
+        {updateInfo && showUpdateBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-gradient-to-r from-green-900/60 to-emerald-900/60 border border-green-500/50 rounded-xl p-4 flex items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <RefreshCw size={22} className="text-green-400 animate-spin" style={{animationDuration:'3s'}} />
+              </div>
+              <div>
+                <p className="text-green-300 font-bold text-base">🎉 New Update Available — v{updateInfo.latestVersion}</p>
+                <p className="text-green-400/70 text-sm">Aapka current version: v{updateInfo.currentVersion}. Naya version download karein!</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {updateInfo.downloadUrl && (
+                <a
+                  href={updateInfo.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-green-500 hover:bg-green-400 text-black font-bold px-5 py-2 rounded-lg flex items-center gap-2 transition text-sm"
+                >
+                  <Download size={16} /> Download Update
+                </a>
+              )}
+              <button
+                onClick={() => setShowUpdateBanner(false)}
+                className="text-green-400/60 hover:text-green-300 transition p-1"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Top Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard icon={Video} title="Reels Generated" value={user?.reels_generated || 0} color="purple" delay={0.1} />
