@@ -17,8 +17,8 @@ if not exist "backend\node_modules" (
     cd ..
 )
 
-:: Start backend server
-start "" /b node backend/src/server.js
+:: Start backend server using local node.exe
+start "" /b "%~dp0node.exe" backend/src/server.js
 
 :: Wait for server to start
 timeout /t 3 /nobreak >nul
