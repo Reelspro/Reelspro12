@@ -8,18 +8,25 @@ OutputDir=dist-release
 OutputBaseFilename=ReelsPro-Setup-1.3.0
 Compression=lzma2
 SolidCompression=yes
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64os
+
+WizardStyle=modern
+DisableWelcomePage=no
+DisableDirPage=no
 
 [Files]
-Source: "*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "\.git\*,\dist-release\*,\output\*,\node_modules\.cache\*,\backend\storage\reels\*,\backend\temp\*,*.iss,build_installer.js,ReelsPro-Setup-*.exe,reels_pro.db,.env"
+; All project files (excluding git, dist, temp, user data, dev tools)
+Source: "*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "\.git\*,\dist-release\*,\output\*,\backend\storage\reels\*,\backend\temp\*,*.iss,build_installer.js,build_clean_installer.js,ReelsPro-Setup-*.exe,reels_pro.db,.env,\node_modules\.cache\*,\frontend\node_modules\*,\scratch\*"
 
 [Icons]
-Name: "{group}\ReelsPro"; Filename: "{app}\start.bat"; IconFilename: "{sys}\cmd.exe"
-Name: "{autodesktop}\ReelsPro"; Filename: "{app}\start.bat"; IconFilename: "{sys}\cmd.exe"; Tasks: desktopicon
+Name: "{group}\ReelsPro"; Filename: "{app}\launcher.vbs"
+Name: "{autodesktop}\ReelsPro"; Filename: "{app}\launcher.vbs"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional icons:"; Flags: unchecked
 
 [Run]
-Filename: "{app}\setup.bat"; Description: "Run Setup (Install Node dependencies if missing)"; Flags: postinstall waituntilterminated
-Filename: "{app}\start.bat"; Description: "Launch ReelsPro"; Flags: postinstall nowait
+Filename: "{app}\launcher.vbs"; Description: "Launch ReelsPro"; Flags: postinstall nowait shellexec
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "ReelsPro"; ValueData: "wscript.exe ""{app}\launcher.vbs"""; Flags: uninsdeletevalue; Tasks:
