@@ -23,22 +23,26 @@ async function ensureNodeBinary() {
   }
 
   console.log('[Setup] node.exe is missing. Downloading portable Node.js v20.11.1 (x64)...');
-  const axios = require('axios');
+  const https = require('https');
   const url = 'https://nodejs.org/dist/v20.11.1/win-x64/node.exe';
   
   try {
-    const response = await axios({
-      method: 'GET',
-      url: url,
-      responseType: 'stream'
-    });
-
-    const writer = fs.createWriteStream(nodeLocalPath);
-    response.data.pipe(writer);
-
+    const fileStream = fs.createWriteStream(nodeLocalPath);
     await new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
+      https.get(url, (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error(`Failed to download: ${res.statusCode}`));
+          return;
+        }
+        res.pipe(fileStream);
+        fileStream.on('finish', () => {
+          fileStream.close();
+          resolve();
+        });
+      }).on('error', (err) => {
+        fs.unlink(nodeLocalPath, () => {});
+        reject(err);
+      });
     });
     console.log('✅ node.exe downloaded successfully.');
   } catch (err) {
@@ -53,6 +57,7 @@ async function ensureNodeBinary() {
     }
   }
 }
+
 
 async function main() {
   // Ensure we have local node.exe first
